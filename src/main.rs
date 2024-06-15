@@ -63,6 +63,8 @@ fn main() {
         }
     }
 
+    let list_to_keep: Vec<String> = Vec::new();
+
     generate_files();
 }
 
@@ -76,11 +78,11 @@ fn generate_files() -> std::io::Result<()> {
     for i in 0..files_qnt {
         let day_num: i32 = rand::thread_rng().gen_range(0..30);
         let mut day_str = day_num.to_string();
-        if (day_num < 10) {
+        if day_num < 10 {
             day_str = format!("0{}", day_str);
         }
 
-        let mut month = rand::thread_rng().gen_range(1..12);
+        let month = rand::thread_rng().gen_range(1..12);
         let mut month_str = month.to_string();
         if (month < 10) {
             month_str = format!("0{}", month);
@@ -88,10 +90,21 @@ fn generate_files() -> std::io::Result<()> {
         let year = rand::thread_rng().gen_range(2000..2024);
 
         let file_name = format!("{path}/test-data/{day_str}.{month_str}.{year}_{i}.tar");
-        // let mut file = File::create(format!("{path}/test-data/12.09_{i}.tar"))?;
-        let mut file = File::create(file_name)?;
-        file.write_all(b"Hello, world!")?;
+        let cloned_file_name = file_name.clone();
+        let mut file = File::create(cloned_file_name)?;
+        file.write_all(file_name.as_bytes())?;
+
+        println!("File object: {:?}", file);
     }
+
+    Ok(())
+}
+
+fn clear_the_day() -> std::io::Result<()> {
+    // TODO:
+    // 1. get all files of this day
+    // 2. keep only most new file
+    // 3. delete all other files
 
     Ok(())
 }
