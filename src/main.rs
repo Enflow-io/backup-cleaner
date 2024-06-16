@@ -1,5 +1,5 @@
 #![feature(exclusive_range_pattern)]
-use chrono::{NaiveDate, TimeZone, Utc};
+use chrono::{DateTime, NaiveDate, TimeZone, Utc};
 use parse_duration::parse;
 use rand::Rng;
 use std::fs::{self, File};
@@ -70,6 +70,13 @@ fn main() {
     check_period(config);
 
     // generate_files();
+}
+
+fn is_date_in_period(day_from: DateTime<Utc>, period_secs: i64, date_to_check: DateTime<Utc>) -> bool {
+    let date_to_check_in_seconds = date_to_check.timestamp();
+    let day_from_in_seconds = day_from.timestamp();
+    
+    return date_to_check_in_seconds >= day_from_in_seconds && date_to_check_in_seconds <= (day_from_in_seconds + period_secs);
 }
 
 fn generate_files() -> std::io::Result<()> {
@@ -148,8 +155,7 @@ fn check_period(config: &Config) -> std::io::Result<()> {
     Ok(())
 }
 
-
-fn extract_date_from_file_name(file_name: &str) -> String {
+fn extract_date_from_file_name(file_name: &str) -> DateTime<Utc> {
     let regexp = regex::Regex::new(r"(\d{2}).(\d{2}).(\d{4})").unwrap();
     let captures = regexp.captures(file_name).unwrap();
 
@@ -158,8 +164,7 @@ fn extract_date_from_file_name(file_name: &str) -> String {
     let year = captures.get(3).unwrap().as_str().parse::<i32>().unwrap();
 
     println!("Filename: {}", file_name);
-    let date = Utc::with_ymd_and_hms(&Utc, year, month, day, 0, 0, 0).unwrap().to_string();
-
+    let date = Utc::with_ymd_and_hms(&Utc, year, month, day, 0, 0, 0).unwrap();
 
     date
 }
