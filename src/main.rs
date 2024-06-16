@@ -2,8 +2,9 @@
 use chrono::{DateTime, NaiveDate, TimeZone, Utc};
 use parse_duration::parse;
 use rand::Rng;
-use std::fs::{self, File};
+use std::fs::{self, DirEntry, File};
 use std::io::prelude::*;
+use std::time::SystemTime;
 
 #[derive(Debug)]
 struct Config {
@@ -72,11 +73,16 @@ fn main() {
     // generate_files();
 }
 
-fn is_date_in_period(day_from: DateTime<Utc>, period_secs: i64, date_to_check: DateTime<Utc>) -> bool {
+fn is_date_in_period(
+    day_from: DateTime<Utc>,
+    period_secs: i64,
+    date_to_check: DateTime<Utc>,
+) -> bool {
     let date_to_check_in_seconds = date_to_check.timestamp();
     let day_from_in_seconds = day_from.timestamp();
-    
-    return date_to_check_in_seconds >= day_from_in_seconds && date_to_check_in_seconds <= (day_from_in_seconds + period_secs);
+
+    return date_to_check_in_seconds >= day_from_in_seconds
+        && date_to_check_in_seconds <= (day_from_in_seconds + period_secs);
 }
 
 fn generate_files() -> std::io::Result<()> {
@@ -123,7 +129,6 @@ fn clear_the_day() -> std::io::Result<()> {
 fn check_period(config: &Config) -> std::io::Result<()> {
     let period_in_seconds = parse(config.period).unwrap().as_secs();
     let files = fs::read_dir("test-data")?;
-
     /*
 
     1. проверяем все периоды, пока не кончатся файлы или не кончится кол-во периодов
@@ -131,26 +136,30 @@ fn check_period(config: &Config) -> std::io::Result<()> {
     3. выбираем, какие файлы оставить
      */
 
-    for file in files {
-        let file = file?;
-        let metadata = file.metadata()?;
-        let created = metadata.created()?;
-        let now = std::time::SystemTime::now();
-        let duration = now.duration_since(created).unwrap().as_secs();
+    // collect files data
+    let prepared_files_list: &Vec<_> = &files
+        .map(|file| {
+            let file = file.unwrap();
+            let metadata = file.metadata().unwrap();
+            let created = metadata.created().unwrap();
+            let date_from_filename =
+                extract_date_from_file_name(file.file_name().to_str().unwrap());
+            (file, created, date_from_filename)
+        })
+        .collect();
 
-        let date_from_filename = extract_date_from_file_name(file.file_name().to_str().unwrap());
-        println!("Date from file name: {:?}", date_from_filename);
-        // println!(
-        //     "File: {:?}, Created: {:?}, Now: {:?}, Duration: {}",
-        //     file.path(),
-        //     created,
-        //     now,
-        //     duration
-        // );
-        // if duration > seconds {
-        //     println!("File: {:?} is older than {}", file.path(), config.period);
-        // }
-    }
+    println!("Prepared files list: {:?}", prepared_files_list);
+    find_files_in_period(prepared_files_list);
+    // for file in prepared_files_list {
+    //     let file = file?;
+    //     let metadata = file.metadata()?;
+    //     let created = metadata.created()?;
+    //     let now = std::time::SystemTime::now();
+    //     let duration = now.duration_since(created).unwrap().as_secs();
+
+    //     let date_from_filename = extract_date_from_file_name(file.file_name().to_str().unwrap());
+    //     println!("Date from file name: {:?}", date_from_filename);
+    // }
 
     Ok(())
 }
@@ -167,4 +176,9 @@ fn extract_date_from_file_name(file_name: &str) -> DateTime<Utc> {
     let date = Utc::with_ymd_and_hms(&Utc, year, month, day, 0, 0, 0).unwrap();
 
     date
+}
+
+fn find_files_in_period(files: &Vec<(DirEntry, SystemTime, DateTime<Utc>)>) -> std::io::Result<()> {
+
+    Ok(())
 }
