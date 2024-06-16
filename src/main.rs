@@ -1,4 +1,5 @@
 #![feature(exclusive_range_pattern)]
+use chrono::{NaiveDate, TimeZone, Utc};
 use parse_duration::parse;
 use rand::Rng;
 use std::fs::{self, File};
@@ -32,7 +33,7 @@ fn main() {
         },
         {
             Config {
-                period: "1m",
+                period: "1M",
                 qnt: 12,
             }
         },
@@ -44,7 +45,7 @@ fn main() {
         },
     ];
 
-    for config in configs {
+    for config in &configs {
         let parsed_period = parse(config.period);
 
         match parsed_period {
@@ -65,7 +66,10 @@ fn main() {
 
     let list_to_keep: Vec<String> = Vec::new();
 
-    generate_files();
+    let config = configs.get(0).unwrap();
+    check_period(config);
+
+    // generate_files();
 }
 
 fn generate_files() -> std::io::Result<()> {
@@ -76,7 +80,7 @@ fn generate_files() -> std::io::Result<()> {
     let files_qnt = 10;
 
     for i in 0..files_qnt {
-        let day_num: i32 = rand::thread_rng().gen_range(0..30);
+        let day_num: i32 = rand::thread_rng().gen_range(1..30);
         let mut day_str = day_num.to_string();
         if day_num < 10 {
             day_str = format!("0{}", day_str);
@@ -107,4 +111,55 @@ fn clear_the_day() -> std::io::Result<()> {
     // 3. delete all other files
 
     Ok(())
+}
+
+fn check_period(config: &Config) -> std::io::Result<()> {
+    let period_in_seconds = parse(config.period).unwrap().as_secs();
+    let files = fs::read_dir("test-data")?;
+
+    /*
+
+    1. проверяем все периоды, пока не кончатся файлы или не кончится кол-во периодов
+    2. для каждого периода выбираем файлы
+    3. выбираем, какие файлы оставить
+     */
+
+    for file in files {
+        let file = file?;
+        let metadata = file.metadata()?;
+        let created = metadata.created()?;
+        let now = std::time::SystemTime::now();
+        let duration = now.duration_since(created).unwrap().as_secs();
+
+        let date_from_filename = extract_date_from_file_name(file.file_name().to_str().unwrap());
+        println!("Date from file name: {:?}", date_from_filename);
+        // println!(
+        //     "File: {:?}, Created: {:?}, Now: {:?}, Duration: {}",
+        //     file.path(),
+        //     created,
+        //     now,
+        //     duration
+        // );
+        // if duration > seconds {
+        //     println!("File: {:?} is older than {}", file.path(), config.period);
+        // }
+    }
+
+    Ok(())
+}
+
+
+fn extract_date_from_file_name(file_name: &str) -> String {
+    let regexp = regex::Regex::new(r"(\d{2}).(\d{2}).(\d{4})").unwrap();
+    let captures = regexp.captures(file_name).unwrap();
+
+    let day = captures.get(1).unwrap().as_str().parse::<u32>().unwrap();
+    let month = captures.get(2).unwrap().as_str().parse::<u32>().unwrap();
+    let year = captures.get(3).unwrap().as_str().parse::<i32>().unwrap();
+
+    println!("Filename: {}", file_name);
+    let date = Utc::with_ymd_and_hms(&Utc, year, month, day, 0, 0, 0).unwrap().to_string();
+
+
+    date
 }
