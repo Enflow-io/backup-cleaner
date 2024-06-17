@@ -25,21 +25,25 @@ fn main() {
         // проверяем все файлы с помощью каждого чекера
         // если ни один чекер не выбрал файл, то добавляем его в список файлов на удаление
 
-        let mut is_to_keep = false;
+        let mut is_to_keep = true;
         for checker in &checkers {
             is_to_keep = checker.check_file(&file, &files_list);
-            
+            if is_to_keep {
+                break;
+            }
         }
 
         if !is_to_keep {
-            store.add_file_to_delete(file.file.file_name().to_str().unwrap().to_string());
-        }else{
             store.add_file_to_keep(file.file.file_name().to_str().unwrap().to_string());
+        }else{
+            store.add_file_to_delete(file.file.file_name().to_str().unwrap().to_string());
         }
 
 
+        
     }
 
+    remove_files(&store.files_to_delete).unwrap();
     // print_configs(&configs);
 
    
@@ -52,6 +56,15 @@ fn main() {
     // generate_files();
 }
 
+
+fn remove_files(files: &Vec<String>) -> std::io::Result<()> {
+    println!("Files to delete: {:#?}", files);
+    // for file in files {
+    //     fs::remove_file(file)?;
+    // }
+
+    Ok(())
+}
 
 fn get_checkers() -> Vec<checker::Checker>{
     let configs: Vec<Config> = vec![
