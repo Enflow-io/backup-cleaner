@@ -15,7 +15,6 @@ struct Config {
 }
 
 fn main() {
-    
     let checkers = get_checkers();
     let mut store = store::Store::new();
     let files_list = get_files_list().unwrap();
