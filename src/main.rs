@@ -5,14 +5,55 @@ use rand::Rng;
 use std::fs::{self, DirEntry, File};
 use std::io::prelude::*;
 use std::time::SystemTime;
+mod checker;
+mod store;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Config {
     period: &'static str,
     qnt: u64,
 }
 
 fn main() {
+    
+    let checkers = get_checkers();
+    let mut store = store::Store::new();
+    let files_list = get_files_list().unwrap();
+
+    for file in &files_list {
+        
+        // проверяем все файлы с помощью каждого чекера
+        // если ни один чекер не выбрал файл, то добавляем его в список файлов на удаление
+
+        let mut is_to_keep = false;
+        for checker in &checkers {
+            is_to_keep = checker.check_file(&file, &files_list);
+            
+        }
+
+        if !is_to_keep {
+            store.add_file_to_delete(file.file.file_name().to_str().unwrap().to_string());
+        }else{
+            store.add_file_to_keep(file.file.file_name().to_str().unwrap().to_string());
+        }
+
+
+    }
+
+    // print_configs(&configs);
+
+   
+
+
+    // let config = configs.get(0).unwrap();
+    // check_period(config);
+
+
+    // generate_files();
+}
+
+
+fn get_checkers() -> Vec<checker::Checker>{
     let configs: Vec<Config> = vec![
         {
             Config {
@@ -46,31 +87,17 @@ fn main() {
         },
     ];
 
-    for config in &configs {
-        let parsed_period = parse(config.period);
+    let checkers = configs.iter().map(|config| {
+        checker::Checker::new(config.to_owned().clone())
+    }).collect::<Vec<checker::Checker>>();
 
-        match parsed_period {
-            Ok(duration) => {
-                println!(
-                    "Period: {}, Qnt: {}, Parsed duration: {}",
-                    config.period,
-                    config.qnt,
-                    duration.as_secs()
-                );
-            }
-            Err(e) => {
-                println!("Error: {:?}", e);
-                println!("Period: {}, Qnt: {}", config.period, config.qnt);
-            }
-        }
+    checkers
+}
+
+fn print_configs(configs: &Vec<Config>) {
+    for config in configs {
+        println!("Period: {}, Qnt: {}", config.period, config.qnt);
     }
-
-    let list_to_keep: Vec<String> = Vec::new();
-
-    let config = configs.get(0).unwrap();
-    check_period(config);
-
-    // generate_files();
 }
 
 fn is_date_in_period(
@@ -117,13 +144,31 @@ fn generate_files() -> std::io::Result<()> {
     Ok(())
 }
 
-fn clear_the_day() -> std::io::Result<()> {
-    // TODO:
-    // 1. get all files of this day
-    // 2. keep only most new file
-    // 3. delete all other files
 
-    Ok(())
+fn get_files_list() -> std::io::Result<Vec<FileData>> {
+    let files = fs::read_dir("test-data")?;
+    let prepared_files_list: Vec<FileData> = files
+        .map(|file| {
+            let file = file.unwrap();
+            let metadata = file.metadata().unwrap();
+            let created = metadata.created().unwrap();
+            let date_from_filename =
+                extract_date_from_file_name(file.file_name().to_str().unwrap());
+            FileData {
+                file,
+                created,
+                date_from_filename,
+            }
+        })
+        .collect::<Vec<FileData>>();
+
+    Ok(prepared_files_list)
+}
+
+struct FileData {
+    file: DirEntry,
+    created: SystemTime,
+    date_from_filename: DateTime<Utc>,
 }
 
 fn check_period(config: &Config) -> std::io::Result<()> {
