@@ -9,7 +9,7 @@ use std::time::SystemTime;
 #[derive(Debug)]
 struct Config {
     period: &'static str,
-    qnt: i32,
+    qnt: u64,
 }
 
 fn main() {
@@ -17,7 +17,7 @@ fn main() {
         {
             Config {
                 period: "1d",
-                qnt: 7,
+                qnt: 100,
             }
         },
         {
@@ -128,6 +128,7 @@ fn clear_the_day() -> std::io::Result<()> {
 
 fn check_period(config: &Config) -> std::io::Result<()> {
     let period_in_seconds = parse(config.period).unwrap().as_secs();
+
     let files = fs::read_dir("test-data")?;
     /*
 
@@ -148,18 +149,37 @@ fn check_period(config: &Config) -> std::io::Result<()> {
         })
         .collect();
 
-    println!("Prepared files list: {:?}", prepared_files_list);
-    find_files_in_period(prepared_files_list);
-    // for file in prepared_files_list {
-    //     let file = file?;
-    //     let metadata = file.metadata()?;
-    //     let created = metadata.created()?;
-    //     let now = std::time::SystemTime::now();
-    //     let duration = now.duration_since(created).unwrap().as_secs();
+    // println!("Prepared files list: {:?}", prepared_files_list);
+    // find_files_in_period(prepared_files_list);
+    let now_in_ceconds = Utc::now().timestamp();
 
-    //     let date_from_filename = extract_date_from_file_name(file.file_name().to_str().unwrap());
-    //     println!("Date from file name: {:?}", date_from_filename);
-    // }
+    for i in 1..=config.qnt {
+        let start_time = now_in_ceconds as u64 - (period_in_seconds * i);
+        let end_time = start_time + period_in_seconds;
+        println!("Period: {}", i);
+        println!("Start time: {}, End time: {}, Start formatted: {}", start_time, end_time, Utc.timestamp(start_time as i64, 0));
+
+        for file in prepared_files_list {
+            let file_name = file.0.file_name();
+            let file_name_str = file_name.to_str().unwrap();
+            let date_from_filename = extract_date_from_file_name(file_name_str);
+            let date_from_filename_in_seconds = date_from_filename.timestamp() as u64;
+
+            let is_date_in_period = date_from_filename_in_seconds >= start_time
+                && date_from_filename_in_seconds <= end_time;
+
+            let start_period_date = Utc.timestamp(start_time as i64, 0);
+            let end_period_date = Utc.timestamp(end_time as i64, 0);
+            if (is_date_in_period) {
+                println!("------------------------------------");
+                println!("Start period date: {:?}", start_period_date);
+                println!("End period date: {:?}", end_period_date);
+                println!("File: {:?}", file_name);
+                println!("Date: {:?}", date_from_filename);
+                println!("File in period: {:?}", is_date_in_period);
+            }
+        }
+    }
 
     Ok(())
 }
@@ -172,13 +192,12 @@ fn extract_date_from_file_name(file_name: &str) -> DateTime<Utc> {
     let month = captures.get(2).unwrap().as_str().parse::<u32>().unwrap();
     let year = captures.get(3).unwrap().as_str().parse::<i32>().unwrap();
 
-    println!("Filename: {}", file_name);
+    // println!("Filename: {}", file_name);
     let date = Utc::with_ymd_and_hms(&Utc, year, month, day, 0, 0, 0).unwrap();
 
     date
 }
 
 fn find_files_in_period(files: &Vec<(DirEntry, SystemTime, DateTime<Utc>)>) -> std::io::Result<()> {
-
     Ok(())
 }
