@@ -54,11 +54,23 @@ impl Checker {
 
         // 3. выбираем самый близкий файл к концу периода
         let most_new_file = files_in_period.first().unwrap();
+        let most_old_file = files_in_period.last().unwrap();
 
         // если файл самый новый - оставляем его
         if filename == most_new_file.file.file_name() {
             is_to_keep = true;
         } else {
+            // проверяем, есть ли файлы в предыдещм переоде
+            let is_previous_period_empty = false;
+            let is_older_file = filename == most_old_file.file.file_name();
+
+            if is_previous_period_empty && is_older_file  {
+                is_to_keep = true;
+            } else {
+                is_to_keep = false;
+            }
+
+            
             is_to_keep = false;
         }
 
