@@ -1,6 +1,6 @@
 
 pub struct Store {
-    files_to_keep: Vec<String>,
+    pub files_to_keep: Vec<String>,
     pub files_to_delete: Vec<String>,
 }
 

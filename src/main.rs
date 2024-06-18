@@ -26,13 +26,14 @@ fn main() {
 
         let mut is_to_keep = true;
         for checker in &checkers {
+            println!("----====== Checker: {:?} =====-----", checker.config.period);
             is_to_keep = checker.check_file(&file, &files_list);
             if is_to_keep {
                 break;
             }
         }
 
-        if !is_to_keep {
+        if is_to_keep {
             store.add_file_to_keep(file.file.file_name().to_str().unwrap().to_string());
         }else{
             store.add_file_to_delete(file.file.file_name().to_str().unwrap().to_string());
@@ -43,6 +44,9 @@ fn main() {
     }
 
     remove_files(&store.files_to_delete).unwrap();
+    &store.files_to_keep.sort();
+    println!("Files to keep: {:#?}", &store.files_to_keep);
+
     // print_configs(&configs);
 
    
@@ -58,6 +62,11 @@ fn main() {
 
 fn remove_files(files: &Vec<String>) -> std::io::Result<()> {
     println!("Files to delete: {:#?}", files);
+    let mut clone = files.clone();
+    
+    clone.sort();
+    println!("Files to delete: {:#?}", clone);
+    
     // for file in files {
     //     fs::remove_file(file)?;
     // }
@@ -73,30 +82,30 @@ fn get_checkers() -> Vec<checker::Checker>{
                 qnt: 100,
             }
         },
-        {
-            Config {
-                period: "1w",
-                qnt: 8,
-            }
-        },
-        {
-            Config {
-                period: "2w",
-                qnt: 8,
-            }
-        },
-        {
-            Config {
-                period: "1M",
-                qnt: 12,
-            }
-        },
-        {
-            Config {
-                period: "1y",
-                qnt: 2,
-            }
-        },
+        // {
+        //     Config {
+        //         period: "1w",
+        //         qnt: 8,
+        //     }
+        // },
+        // {
+        //     Config {
+        //         period: "2w",
+        //         qnt: 8,
+        //     }
+        // },
+        // {
+        //     Config {
+        //         period: "1M",
+        //         qnt: 12,
+        //     }
+        // },
+        // {
+        //     Config {
+        //         period: "1y",
+        //         qnt: 2,
+        //     }
+        // },
     ];
 
     let checkers = configs.iter().map(|config| {
