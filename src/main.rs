@@ -11,7 +11,8 @@ use checker::Checker;
 mod file_data;
 mod store;
 use file_data::FileData;
-
+mod tests;
+mod file_generator;
 #[derive(Debug, Clone)]
 struct Config {
     period: &'static str,
@@ -24,25 +25,7 @@ fn main() {
 
     let files_list = get_files_list().unwrap();
 
-    for file in &files_list {
-        // проверяем все файлы с помощью каждого чекера
-        // если ни один чекер не выбрал файл, то добавляем его в список файлов на удаление
-
-        let mut is_to_keep = true;
-        for checker in &checkers {
-            println!("----====== Checker: {:?} =====-----", checker.config.period);
-            is_to_keep = checker.check_file(&file, &files_list);
-            if is_to_keep {
-                break;
-            }
-        }
-
-        if is_to_keep {
-            store.borrow_mut().add_file_to_keep(file.file_name());
-        } else {
-            store.borrow_mut().add_file_to_delete(file.file_name());
-        }
-    }
+    check_files(&files_list, &checkers, store.clone());
 
 
     remove_files(&store.borrow().files_to_delete).unwrap();
@@ -57,16 +40,47 @@ fn main() {
     // generate_files();
 }
 
+
+pub fn check_files(files: &Vec<FileData>, checkers: &Vec<Checker>, store: RefCell<Store>) -> std::io::Result<()> {
+    for file in files {
+        // проверяем все файлы с помощью каждого чекера
+        // если ни один чекер не выбрал файл, то добавляем его в список файлов на удаление
+
+        let mut is_to_keep = true;
+        for checker in checkers {
+            println!("----====== Checker: {:?} =====-----", checker.config.period);
+            is_to_keep = checker.check_file(&file, &files);
+            if is_to_keep {
+                break;
+            }
+        }
+
+        if is_to_keep {
+            store.borrow_mut().add_file_to_keep(file.file_name());
+        } else {
+            store.borrow_mut().add_file_to_delete(file.file_name());
+        }
+    }
+
+    remove_files(&store.borrow().files_to_delete).unwrap();
+    // println!("Files to keep: {:#?}", store.borrow().files_to_keep);
+
+    Ok(())
+}
+
 fn remove_files(files: &Vec<String>) -> std::io::Result<()> {
     // println!("Files to delete: {:#?}", files);
+    let path = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+    let test_data_path = format!("{path}/test-data");
+    
     let mut clone = files.clone();
 
     clone.sort();
     println!("Files to delete: {:#?}", clone);
 
-    // for file in files {
-    //     fs::remove_file(file)?;
-    // }
+    for file in files {
+        fs::remove_file(format!("{test_data_path}/{file}"))?;
+    }
 
     Ok(())
 }
@@ -119,49 +133,9 @@ fn print_configs(configs: &Vec<Config>) {
     }
 }
 
-fn is_date_in_period(
-    day_from: DateTime<Utc>,
-    period_secs: i64,
-    date_to_check: DateTime<Utc>,
-) -> bool {
-    let date_to_check_in_seconds = date_to_check.timestamp();
-    let day_from_in_seconds = day_from.timestamp();
 
-    return date_to_check_in_seconds >= day_from_in_seconds
-        && date_to_check_in_seconds <= (day_from_in_seconds + period_secs);
-}
 
-fn generate_files() -> std::io::Result<()> {
-    let path = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-    let test_data_path = format!("{path}/test-data");
-    fs::create_dir_all(test_data_path)?;
 
-    let files_qnt = 10;
-
-    for i in 0..files_qnt {
-        let day_num: i32 = rand::thread_rng().gen_range(1..30);
-        let mut day_str = day_num.to_string();
-        if day_num < 10 {
-            day_str = format!("0{}", day_str);
-        }
-
-        let month = rand::thread_rng().gen_range(1..12);
-        let mut month_str = month.to_string();
-        if (month < 10) {
-            month_str = format!("0{}", month);
-        }
-        let year = rand::thread_rng().gen_range(2000..2024);
-
-        let file_name = format!("{path}/test-data/{day_str}.{month_str}.{year}_{i}.tar");
-        let cloned_file_name = file_name.clone();
-        let mut file = File::create(cloned_file_name)?;
-        file.write_all(file_name.as_bytes())?;
-
-        println!("File object: {:?}", file);
-    }
-
-    Ok(())
-}
 
 fn get_files_list() -> std::io::Result<Vec<FileData>> {
     let files = fs::read_dir("test-data")?;
@@ -259,3 +233,5 @@ fn extract_date_from_file_name(file_name: &str) -> DateTime<Utc> {
 
     date
 }
+
+
