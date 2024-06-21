@@ -1,8 +1,10 @@
 
+#[derive(Clone)]
 pub struct Store {
     pub files_to_keep: Vec<String>,
     pub files_to_delete: Vec<String>,
 }
+
 
 impl Store {
     pub fn new() -> Store {

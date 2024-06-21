@@ -2,11 +2,15 @@
 use chrono::{DateTime, NaiveDate, TimeZone, Utc};
 use parse_duration::parse;
 use rand::Rng;
+use std::cell::RefCell;
 use std::fs::{self, DirEntry, File};
 use std::io::prelude::*;
-use std::time::SystemTime;
+use store::Store;
 mod checker;
+use checker::Checker;
+mod file_data;
 mod store;
+use file_data::FileData;
 
 #[derive(Debug, Clone)]
 struct Config {
@@ -15,12 +19,12 @@ struct Config {
 }
 
 fn main() {
-    let checkers = get_checkers();
-    let mut store = store::Store::new();
+    let store = RefCell::new(Store::new());
+    let checkers = get_checkers(store.clone());
+
     let files_list = get_files_list().unwrap();
 
     for file in &files_list {
-        
         // проверяем все файлы с помощью каждого чекера
         // если ни один чекер не выбрал файл, то добавляем его в список файлов на удаление
 
@@ -34,39 +38,32 @@ fn main() {
         }
 
         if is_to_keep {
-            store.add_file_to_keep(file.file.file_name().to_str().unwrap().to_string());
-        }else{
-            store.add_file_to_delete(file.file.file_name().to_str().unwrap().to_string());
+            store.borrow_mut().add_file_to_keep(file.file_name());
+        } else {
+            store.borrow_mut().add_file_to_delete(file.file_name());
         }
-
-
-        
     }
 
-    remove_files(&store.files_to_delete).unwrap();
-    &store.files_to_keep.sort();
-    println!("Files to keep: {:#?}", &store.files_to_keep);
+
+    remove_files(&store.borrow().files_to_delete).unwrap();
+    // &store2.files_to_keep.sort();
+    println!("Files to keep: {:#?}", store.borrow().files_to_keep);
 
     // print_configs(&configs);
-
-   
-
 
     // let config = configs.get(0).unwrap();
     // check_period(config);
 
-
     // generate_files();
 }
 
-
 fn remove_files(files: &Vec<String>) -> std::io::Result<()> {
-    println!("Files to delete: {:#?}", files);
+    // println!("Files to delete: {:#?}", files);
     let mut clone = files.clone();
-    
+
     clone.sort();
     println!("Files to delete: {:#?}", clone);
-    
+
     // for file in files {
     //     fs::remove_file(file)?;
     // }
@@ -74,7 +71,7 @@ fn remove_files(files: &Vec<String>) -> std::io::Result<()> {
     Ok(())
 }
 
-fn get_checkers() -> Vec<checker::Checker>{
+fn get_checkers(store: RefCell<Store>) -> Vec<checker::Checker> {
     let configs: Vec<Config> = vec![
         {
             Config {
@@ -108,9 +105,10 @@ fn get_checkers() -> Vec<checker::Checker>{
         // },
     ];
 
-    let checkers = configs.iter().map(|config| {
-        checker::Checker::new(config.to_owned().clone())
-    }).collect::<Vec<checker::Checker>>();
+    let checkers = configs
+        .iter()
+        .map(|config| Checker::new(config.to_owned().clone(), store.clone()))
+        .collect::<Vec<Checker>>();
 
     checkers
 }
@@ -165,7 +163,6 @@ fn generate_files() -> std::io::Result<()> {
     Ok(())
 }
 
-
 fn get_files_list() -> std::io::Result<Vec<FileData>> {
     let files = fs::read_dir("test-data")?;
     let prepared_files_list: Vec<FileData> = files
@@ -176,7 +173,7 @@ fn get_files_list() -> std::io::Result<Vec<FileData>> {
             let date_from_filename =
                 extract_date_from_file_name(file.file_name().to_str().unwrap());
             FileData {
-                file,
+                file_name: file.file_name().to_str().unwrap().to_string(),
                 created,
                 date_from_filename,
             }
@@ -184,12 +181,6 @@ fn get_files_list() -> std::io::Result<Vec<FileData>> {
         .collect::<Vec<FileData>>();
 
     Ok(prepared_files_list)
-}
-
-struct FileData {
-    file: DirEntry,
-    created: SystemTime,
-    date_from_filename: DateTime<Utc>,
 }
 
 fn check_period(config: &Config) -> std::io::Result<()> {
@@ -223,7 +214,12 @@ fn check_period(config: &Config) -> std::io::Result<()> {
         let start_time = now_in_ceconds as u64 - (period_in_seconds * i);
         let end_time = start_time + period_in_seconds;
         println!("Period: {}", i);
-        println!("Start time: {}, End time: {}, Start formatted: {}", start_time, end_time, Utc.timestamp(start_time as i64, 0));
+        println!(
+            "Start time: {}, End time: {}, Start formatted: {}",
+            start_time,
+            end_time,
+            Utc.timestamp(start_time as i64, 0)
+        );
 
         for file in prepared_files_list {
             let file_name = file.0.file_name();
@@ -262,8 +258,4 @@ fn extract_date_from_file_name(file_name: &str) -> DateTime<Utc> {
     let date = Utc::with_ymd_and_hms(&Utc, year, month, day, 0, 0, 0).unwrap();
 
     date
-}
-
-fn find_files_in_period(files: &Vec<(DirEntry, SystemTime, DateTime<Utc>)>) -> std::io::Result<()> {
-    Ok(())
 }
