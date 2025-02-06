@@ -9,14 +9,14 @@ mod tests {
 
     #[test]
     fn test_daily_files() {
-        let store = RefCell::new(Store::new());
+        let mut store = Store::new();
         let _ = cleanup_files();
         let _ = generate_daily_files();
         let files_list = get_files_list().unwrap();
-        let checkers = get_checkers(store.clone());
-        let _ = check_files(&files_list, &checkers, store.clone());
+        let checkers = get_checkers();
+        let _ = check_files(&files_list, &checkers, &mut store);
 
         let file_in_folder = std::fs::read_dir("test-data").unwrap().count();
-        assert_eq!(file_in_folder, 10);
+        assert_eq!(file_in_folder, 15);
     }
 }
