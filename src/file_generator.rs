@@ -66,8 +66,8 @@ pub fn generate_daily_files() -> std::io::Result<()> {
         }
 
 
-        let store = RefCell::new(Store::new());
-        let checkers = get_checkers(store.clone());
+        let mut store = Store::new();
+        // let checkers = get_checkers(store);
     }
 
     Ok(())

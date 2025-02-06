@@ -2,7 +2,6 @@
 use chrono::{DateTime, NaiveDate, TimeZone, Utc};
 use parse_duration::parse;
 use rand::Rng;
-use std::cell::RefCell;
 use std::fs::{self, DirEntry, File};
 use std::io::prelude::*;
 use store::Store;
@@ -20,50 +19,64 @@ struct Config {
 }
 
 fn main() {
-    let store = RefCell::new(Store::new());
-    let checkers = get_checkers(store.clone());
+    let mut store = Store::new();
+
+    let configs: Vec<Config> = vec![
+
+            Config {
+                period: "1d",
+                qnt: 7,
+            },
+
+            Config {
+                period: "1w",
+                qnt: 7,
+            },
+
+    ];
+
+    let mut checkers = Vec::new();
+    for config in configs {
+        checkers.push(Checker::new(config.clone(), &mut store));
+    }
+
+
 
     let files_list = get_files_list().unwrap();
 
-    check_files(&files_list, &checkers, store.clone());
+    // check_files(&files_list, &mut checkers);
 
 
-    remove_files(&store.borrow().files_to_delete).unwrap();
-    // &store2.files_to_keep.sort();
-    println!("Files to keep: {:#?}", store.borrow().files_to_keep);
-
-    // print_configs(&configs);
-
-    // let config = configs.get(0).unwrap();
-    // check_period(config);
-
+    // println!("Files to keep: {:#?}", store.files_to_keep);
+    // println!("Files to delete: {:#?}", store.files_to_delete);
     // generate_files();
 }
 
 
-pub fn check_files(files: &Vec<FileData>, checkers: &Vec<Checker>, store: RefCell<Store>) -> std::io::Result<()> {
+
+
+pub fn check_files(files: &Vec<FileData>, checkers: &mut Vec<Checker>) -> std::io::Result<()> {
     for file in files {
         // проверяем все файлы с помощью каждого чекера
         // если ни один чекер не выбрал файл, то добавляем его в список файлов на удаление
 
         let mut is_to_keep = true;
-        for checker in checkers {
+        for checker in &mut *checkers {
             println!("----====== Checker: {:?} =====-----", checker.config.period);
             is_to_keep = checker.check_file(&file, &files);
             if is_to_keep {
                 break;
             }
+
+            if is_to_keep {
+                checker.store.add_file_to_keep(file.file_name());
+            } else {
+                checker.store.add_file_to_delete(file.file_name());
+            }
         }
 
-        if is_to_keep {
-            store.borrow_mut().add_file_to_keep(file.file_name());
-        } else {
-            store.borrow_mut().add_file_to_delete(file.file_name());
-        }
+
     }
-
-    remove_files(&store.borrow().files_to_delete).unwrap();
-    // println!("Files to keep: {:#?}", store.borrow().files_to_keep);
 
     Ok(())
 }
@@ -85,7 +98,7 @@ fn remove_files(files: &Vec<String>) -> std::io::Result<()> {
     Ok(())
 }
 
-fn get_checkers(store: RefCell<Store>) -> Vec<checker::Checker> {
+fn get_checkers(store: &mut Store) -> Vec<checker::Checker<'static>> {
     let configs: Vec<Config> = vec![
         {
             Config {
@@ -93,36 +106,12 @@ fn get_checkers(store: RefCell<Store>) -> Vec<checker::Checker> {
                 qnt: 100,
             }
         },
-        // {
-        //     Config {
-        //         period: "1w",
-        //         qnt: 8,
-        //     }
-        // },
-        // {
-        //     Config {
-        //         period: "2w",
-        //         qnt: 8,
-        //     }
-        // },
-        // {
-        //     Config {
-        //         period: "1M",
-        //         qnt: 12,
-        //     }
-        // },
-        // {
-        //     Config {
-        //         period: "1y",
-        //         qnt: 2,
-        //     }
-        // },
     ];
 
-    let checkers = configs
-        .iter()
-        .map(|config| Checker::new(config.to_owned().clone(), store.clone()))
-        .collect::<Vec<Checker>>();
+    let mut checkers = Vec::new();
+    for config in configs {
+        checkers.push(Checker::new(config.clone(), store));
+    }
 
     checkers
 }
@@ -132,9 +121,6 @@ fn print_configs(configs: &Vec<Config>) {
         println!("Period: {}, Qnt: {}", config.period, config.qnt);
     }
 }
-
-
-
 
 
 fn get_files_list() -> std::io::Result<Vec<FileData>> {

@@ -5,9 +5,9 @@ use parse_duration::parse;
 
 use crate::{extract_date_from_file_name, store::Store, Config, FileData};
 
-pub(crate) struct Checker {
+pub(crate) struct Checker<'a> {
     pub config: Config,
-    pub store: RefCell<Store>,
+    pub store: &'a mut Store,
 }
 
 pub struct PeriodBounds {
@@ -15,8 +15,8 @@ pub struct PeriodBounds {
     pub end: i64,
 }
 
-impl Checker {
-    pub fn new(config: Config, store: RefCell<Store>) -> Checker {
+impl<'a> Checker<'a> {
+    pub fn new(config: Config, store: &'a mut Store) -> Checker {
         Checker { config, store }
     }
 
