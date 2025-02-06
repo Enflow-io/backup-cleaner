@@ -5,9 +5,8 @@ use parse_duration::parse;
 
 use crate::{extract_date_from_file_name, store::Store, Config, FileData};
 
-pub(crate) struct Checker<'a> {
+pub(crate) struct Checker {
     pub config: Config,
-    pub store: &'a mut Store,
 }
 
 pub struct PeriodBounds {
@@ -15,9 +14,9 @@ pub struct PeriodBounds {
     pub end: i64,
 }
 
-impl<'a> Checker<'a> {
-    pub fn new(config: Config, store: &'a mut Store) -> Checker {
-        Checker { config, store }
+impl Checker {
+    pub fn new(config: Config) -> Checker {
+        Checker { config }
     }
 
     fn get_period_bounds(&self, file: &FileData, period: &str) -> (i64, i64) {
@@ -67,7 +66,7 @@ impl<'a> Checker<'a> {
         let mut files_in_period = self.find_files_in_period(start, end, files_list);
         files_in_period.sort_by(|a, b| b.created.cmp(&a.created));
 
-        println!("-----------------");
+        println!("Period, from: {}, to: {}", start, end);
         println!(
             "Files in period: {:#?}",
             files_in_period
@@ -75,7 +74,6 @@ impl<'a> Checker<'a> {
                 .map(|f| f.file_name())
                 .collect::<Vec<_>>()
         );
-        println!("-----------------");
 
         // 3. выбираем самый молодой и старый файлы
         let most_new_file = files_in_period.first().unwrap();
@@ -88,26 +86,26 @@ impl<'a> Checker<'a> {
             // проверяем, не пустой ли предыдущий период
             let is_previous_period_empty = false;
 
-            // let files_marked_as_removed = 
-
-            let previous_period_bounds: PeriodBounds = PeriodBounds {
-                start: start - parse(self.config.period).unwrap().as_secs() as i64,
-                end: start - 1,
-            };
-
+            // todo: проверить предыдущий период
+            // если предыдущий период пустой, а текущий файл - самый старый из списка, тогда не удаляем файл
+            // let previous_period_bounds: PeriodBounds = PeriodBounds {
+            //     start: start - parse(self.config.period).unwrap().as_secs() as i64,
+            //     end: start - 1,
+            // };
+            //
             // let found_files = self.find_files_in_period(
             //     previous_period_bounds.start,
             //     previous_period_bounds.end,
             //     files_list,
-            // ).iter().filter(|f| {
+            // ).iter().filter(|f| {}).count();
 
-            // }).count();
+            // if is_previous_period_empty {
+            //     is_to_keep = true;
+            // } else {
+            //     is_to_keep = false;
+            // }
 
-            if is_previous_period_empty {
-                is_to_keep = true;
-            } else {
-                is_to_keep = false;
-            }
+            is_to_keep = false;
         } else {
             // середину удаляем
             is_to_keep = false;

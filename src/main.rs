@@ -4,6 +4,7 @@ use parse_duration::parse;
 use rand::Rng;
 use std::fs::{self, DirEntry, File};
 use std::io::prelude::*;
+use std::sync::Arc;
 use store::Store;
 mod checker;
 use checker::Checker;
@@ -21,64 +22,62 @@ struct Config {
 fn main() {
     let mut store = Store::new();
 
+    // формируем конфиг
+    // todo: в будущем из .env
     let configs: Vec<Config> = vec![
-
             Config {
                 period: "1d",
                 qnt: 7,
             },
-
-            Config {
-                period: "1w",
-                qnt: 7,
-            },
-
+            // Config {
+            //     period: "1w",
+            //     qnt: 7,
+            // },
     ];
 
+    // Создаем проверяльщиков
     let mut checkers = Vec::new();
     for config in configs {
-        checkers.push(Checker::new(config.clone(), &mut store));
+        checkers.push(Checker::new(config.clone()));
     }
 
-
-
+    // Получаем вектор файлов, которые будем проверять
     let files_list = get_files_list().unwrap();
 
-    // check_files(&files_list, &mut checkers);
+    // насыщаем store информацией, что удалить, а что оставить
+    check_files(&files_list, &checkers, &mut store);
 
 
-    // println!("Files to keep: {:#?}", store.files_to_keep);
-    // println!("Files to delete: {:#?}", store.files_to_delete);
-    // generate_files();
+    println!("Files to keep: {:#?}", store.files_to_keep);
+    println!("Files to delete: {:#?}", store.files_to_delete);
+
+    // todo: производим реальные действия с файлами
 }
 
 
 
 
-pub fn check_files(files: &Vec<FileData>, checkers: &mut Vec<Checker>) -> std::io::Result<()> {
+pub fn check_files(files: &Vec<FileData>, checkers: &Vec<Checker>, store: &mut Store) {
+    // проверяем все файлы с помощью каждого чекера
+    // если ни один чекер не выбрал файл,
+    //      то добавляем его в список файлов на удаление
     for file in files {
-        // проверяем все файлы с помощью каждого чекера
-        // если ни один чекер не выбрал файл, то добавляем его в список файлов на удаление
-
         let mut is_to_keep = true;
-        for checker in &mut *checkers {
-            println!("----====== Checker: {:?} =====-----", checker.config.period);
+        for checker in checkers {
+            println!("Checker: {:?}", checker.config.period);
             is_to_keep = checker.check_file(&file, &files);
             if is_to_keep {
                 break;
             }
-
-            if is_to_keep {
-                checker.store.add_file_to_keep(file.file_name());
-            } else {
-                checker.store.add_file_to_delete(file.file_name());
-            }
         }
 
-
+        // когда все чекеры делали свою работу, добавляем файл в нужный список
+        if is_to_keep {
+            store.add_file_to_keep(file.file_name());
+        } else {
+            store.add_file_to_delete(file.file_name());
+        }
     }
-
-    Ok(())
 }
 
 fn remove_files(files: &Vec<String>) -> std::io::Result<()> {
@@ -98,7 +97,7 @@ fn remove_files(files: &Vec<String>) -> std::io::Result<()> {
     Ok(())
 }
 
-fn get_checkers(store: &mut Store) -> Vec<checker::Checker<'static>> {
+fn get_checkers() -> Vec<Checker> {
     let configs: Vec<Config> = vec![
         {
             Config {
@@ -110,7 +109,7 @@ fn get_checkers(store: &mut Store) -> Vec<checker::Checker<'static>> {
 
     let mut checkers = Vec::new();
     for config in configs {
-        checkers.push(Checker::new(config.clone(), store));
+        checkers.push(Checker::new(config.clone()));
     }
 
     checkers
