@@ -29,17 +29,14 @@ fn main() {
                 period: "1d",
                 qnt: 7,
             },
-            // Config {
-            //     period: "1w",
-            //     qnt: 7,
-            // },
+            Config {
+                period: "1w",
+                qnt: 7,
+            },
     ];
 
     // Создаем проверяльщиков
-    let mut checkers = Vec::new();
-    for config in configs {
-        checkers.push(Checker::new(config.clone()));
-    }
+    let checkers = get_checkers(configs);
 
     // Получаем вектор файлов, которые будем проверять
     let files_list = get_files_list().unwrap();
@@ -61,11 +58,14 @@ pub fn check_files(files: &Vec<FileData>, checkers: &Vec<Checker>, store: &mut S
     // проверяем все файлы с помощью каждого чекера
     // если ни один чекер не выбрал файл,
     //      то добавляем его в список файлов на удаление
+
     for file in files {
-        let mut is_to_keep = true;
+        let mut is_to_keep = false;
         for checker in checkers {
             println!("Checker: {:?}", checker.config.period);
             is_to_keep = checker.check_file(&file, &files);
+
+            // если хоть один чекер захочет, чтобы файл жил, останавливаем цикл
             if is_to_keep {
                 break;
             }
@@ -81,7 +81,7 @@ pub fn check_files(files: &Vec<FileData>, checkers: &Vec<Checker>, store: &mut S
 }
 
 fn remove_files(files: &Vec<String>) -> std::io::Result<()> {
-    // println!("Files to delete: {:#?}", files);
+
     let path = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let test_data_path = format!("{path}/test-data");
     
@@ -97,16 +97,7 @@ fn remove_files(files: &Vec<String>) -> std::io::Result<()> {
     Ok(())
 }
 
-fn get_checkers() -> Vec<Checker> {
-    let configs: Vec<Config> = vec![
-        {
-            Config {
-                period: "1d",
-                qnt: 100,
-            }
-        },
-    ];
-
+fn get_checkers(configs: Vec<Config>) -> Vec<Checker> {
     let mut checkers = Vec::new();
     for config in configs {
         checkers.push(Checker::new(config.clone()));
