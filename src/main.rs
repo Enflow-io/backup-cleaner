@@ -1,10 +1,9 @@
 #![feature(exclusive_range_pattern)]
-use chrono::{DateTime, NaiveDate, TimeZone, Utc};
+use chrono::{DateTime, TimeZone, Utc};
 use parse_duration::parse;
 use rand::Rng;
-use std::fs::{self, DirEntry, File};
+use std::fs::{self};
 use std::io::prelude::*;
-use std::sync::Arc;
 use store::Store;
 mod checker;
 use checker::Checker;
@@ -26,13 +25,13 @@ fn main() {
     // todo: в будущем из .env
     let configs: Vec<Config> = vec![
             Config {
-                period: "1d",
-                qnt: 7,
-            },
-            Config {
                 period: "1w",
-                qnt: 7,
+                qnt: 2,
             },
+            // Config {
+            //     period: "1w",
+            //     qnt: 7,
+            // },
     ];
 
     // Создаем проверяльщиков
@@ -62,7 +61,6 @@ pub fn check_files(files: &Vec<FileData>, checkers: &Vec<Checker>, store: &mut S
     for file in files {
         let mut is_to_keep = false;
         for checker in checkers {
-            println!("Checker: {:?}", checker.config.period);
             is_to_keep = checker.check_file(&file, &files);
 
             // если хоть один чекер захочет, чтобы файл жил, останавливаем цикл
