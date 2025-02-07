@@ -7,11 +7,6 @@ pub(crate) struct Checker {
     pub config: Config,
 }
 
-pub struct PeriodBounds {
-    pub start: i64,
-    pub end: i64,
-}
-
 impl Checker {
     pub fn new(config: Config) -> Checker {
         Checker { config }
@@ -30,8 +25,8 @@ impl Checker {
         // начал сегодняшнего дня
         // let now = Utc::now().add(chrono::Duration::days(5));
         let now = Utc::now();
-        let start_of_day = now.date().and_hms(0, 0, 0);
-        let start_of_day_timestamp = start_of_day.timestamp();
+        let start_of_day = now.date_naive().and_hms_opt(0, 0, 0).unwrap();
+        let start_of_day_timestamp = start_of_day.and_utc().timestamp();
 
         // файл таймштамп в секундах
         let file_date = extract_date_from_file_name(&file.file_name());
