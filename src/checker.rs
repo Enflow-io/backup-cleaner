@@ -17,10 +17,11 @@ impl Checker {
         Checker { config }
     }
 
-    fn get_max_file_age(&self, file: &FileData, period: &str, qnt: u64) -> i64 {
+    fn get_max_file_age(&self, period: &str, qnt: u64) -> i64 {
         let now = Utc::now();
-        let start_of_today = now.date().and_hms(0, 0, 0);
-        let start_of_today_timestamp = start_of_today.timestamp();
+        // let start_of_today = now.date().and_hms(0, 0, 0);
+        let start_of_today = now.date_naive().and_hms_opt(0, 0, 0);
+        let start_of_today_timestamp = start_of_today.unwrap().and_utc().timestamp();
 
         let period_in_seconds = (parse(period).unwrap().as_secs() as i64) * (qnt as i64);
         start_of_today_timestamp - period_in_seconds
@@ -76,7 +77,7 @@ impl Checker {
 
         let date_from_filename = extract_date_from_file_name(&file.file_name());
         let date_from_filename_in_seconds = date_from_filename.timestamp();
-        let max_file_age = self.get_max_file_age(file, self.config.period, self.config.qnt);
+        let max_file_age = self.get_max_file_age(self.config.period, self.config.qnt);
         if date_from_filename_in_seconds < max_file_age {
             return false;
         }

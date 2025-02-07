@@ -178,8 +178,8 @@ fn check_period(config: &Config) -> std::io::Result<()> {
             let is_date_in_period = date_from_filename_in_seconds >= start_time
                 && date_from_filename_in_seconds <= end_time;
 
-            let start_period_date = Utc.timestamp(start_time as i64, 0);
-            let end_period_date = Utc.timestamp(end_time as i64, 0);
+            let start_period_date = Utc.timestamp_opt(start_time as i64, 0);
+            let end_period_date = Utc.timestamp_opt(end_time as i64, 0);
             if (is_date_in_period) {
                 println!("------------------------------------");
                 println!("Start period date: {:?}", start_period_date);

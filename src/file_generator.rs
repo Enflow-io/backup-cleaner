@@ -1,8 +1,4 @@
-use std::{cell::RefCell, fs::{self, File}, io::Write};
-
-use rand::Rng;
-
-use crate::{get_checkers, store::Store};
+use std::{fs::{self, File}, io::Write};
 
 pub fn generate_daily_files(files_qnt: i64) -> std::io::Result<()> {
     let path = std::env::var("CARGO_MANIFEST_DIR").unwrap();
