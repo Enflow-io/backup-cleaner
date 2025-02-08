@@ -1,15 +1,19 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use chrono::{TimeZone, Utc};
 use parse_duration::parse;
 
 use crate::{extract_date_from_file_name, Config, FileData};
+use crate::store::Store;
 
 pub(crate) struct Checker {
     pub config: Config,
+    pub store: Rc<RefCell<Store>>,
 }
 
 impl Checker {
-    pub fn new(config: Config) -> Checker {
-        Checker { config }
+    pub fn new(config: Config, store: Rc<RefCell<Store>>) -> Checker {
+        Checker { config, store }
     }
 
     fn get_max_file_age(&self, period: &str, qnt: u64) -> i64 {

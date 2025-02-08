@@ -1,6 +1,8 @@
 
 #[cfg(test)]
 mod tests {
+    use std::cell::RefCell;
+    use std::rc::Rc;
     use crate::{file_generator::{cleanup_files, generate_daily_files}, get_checkers, get_files_list, remove_files, store::Store, Config};
     use crate::{check_files};
     use crate::file_generator::generate_weekly_files;
@@ -13,14 +15,16 @@ mod tests {
                 qnt: 4,
             }
         ];
-        let mut store = Store::new();
+        let mut store = Rc::new(RefCell::new(Store::new()));
         let _ = cleanup_files();
+        
+        
         let _ = generate_daily_files(10);
         let files_list = get_files_list().unwrap();
-        let checkers = get_checkers(configs);
-        let _ = check_files(&files_list, &checkers, &mut store);
+        let checkers = get_checkers(configs, store.clone());
+        let _ = check_files(&files_list, &checkers);
 
-        let _ = remove_files(&store.files_to_delete);
+        let _ = remove_files(&store.borrow().files_to_delete);
         let file_in_folder = std::fs::read_dir("test-data").unwrap().count();
 
         assert_eq!(file_in_folder, 4);
@@ -35,16 +39,16 @@ mod tests {
             }
         ];
 
-        let mut store = Store::new();
+        let mut store = Rc::new(RefCell::new(Store::new()));
 
         let _ = cleanup_files();
         let _ = generate_weekly_files(10);
         let files_list = get_files_list().unwrap();
-        let checkers = get_checkers(configs);
-        let _ = check_files(&files_list, &checkers, &mut store);
+        let checkers = get_checkers(configs, store.clone());
+        let _ = check_files(&files_list, &checkers);
 
 
-        let _ = remove_files(&store.files_to_delete);
+        let _ = remove_files(&store.borrow().files_to_delete);
 
         let file_in_folder = std::fs::read_dir("test-data").unwrap().count();
         assert_eq!(file_in_folder, 7);
@@ -64,15 +68,15 @@ mod tests {
             }
         ];
         let _ = cleanup_files();
-        let mut store = Store::new();
+        let mut store = Rc::new(RefCell::new(Store::new()));
 
         let _ = cleanup_files();
         let _ = generate_daily_files(27);
         let files_list = get_files_list().unwrap();
-        let checkers = get_checkers(configs);
-        let _ = check_files(&files_list, &checkers, &mut store);
-        println!("F: {:?}", store.files_to_delete);
-        let _ = remove_files(&store.files_to_delete);
+        let checkers = get_checkers(configs, store.clone());
+        let _ = check_files(&files_list, &checkers);
+
+        let _ = remove_files(&store.borrow().files_to_delete);
         let file_in_folder = std::fs::read_dir("test-data").unwrap().count();
         assert_eq!(file_in_folder, 6);
     }

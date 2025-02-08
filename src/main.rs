@@ -1,5 +1,7 @@
+use std::cell::RefCell;
 use chrono::{DateTime, TimeZone, Utc};
 use std::fs::{self};
+use std::rc::Rc;
 use store::Store;
 mod checker;
 use checker::Checker;
@@ -15,7 +17,7 @@ struct Config {
 }
 
 fn main() {
-    let mut store = Store::new();
+    let mut store = Rc::new(RefCell::new(Store::new()));
 
     // формируем конфиг
     // todo: в будущем из .env
@@ -31,17 +33,17 @@ fn main() {
     ];
 
     // Создаем проверяльщиков
-    let checkers = get_checkers(configs);
+    let checkers = get_checkers(configs, store);
 
     // Получаем вектор файлов, которые будем проверять
     let files_list = get_files_list().unwrap();
 
     // насыщаем store информацией, что удалить, а что оставить
-    check_files(&files_list, &checkers, &mut store);
+    check_files(&files_list, &checkers);
 
 
-    println!("Files to keep: {:#?}", store.files_to_keep);
-    println!("Files to delete: {:#?}", store.files_to_delete);
+    // println!("Files to keep: {:#?}", store.files_to_keep);
+    // println!("Files to delete: {:#?}", store.files_to_delete);
 
     // todo: производим реальные действия с файлами
 }
@@ -49,7 +51,7 @@ fn main() {
 
 
 
-pub fn check_files(files: &Vec<FileData>, checkers: &Vec<Checker>, store: &mut Store) {
+pub fn check_files(files: &Vec<FileData>, checkers: &Vec<Checker>) {
     // проверяем все файлы с помощью каждого чекера
     // если ни один чекер не выбрал файл,
     //      то добавляем его в список файлов на удаление
@@ -64,6 +66,8 @@ pub fn check_files(files: &Vec<FileData>, checkers: &Vec<Checker>, store: &mut S
                 break;
             }
         }
+
+        let mut store = checkers[0].store.borrow_mut();
 
         // когда все чекеры делали свою работу, добавляем файл в нужный список
         if is_to_keep {
@@ -91,10 +95,10 @@ fn remove_files(files: &Vec<String>) -> std::io::Result<()> {
     Ok(())
 }
 
-fn get_checkers(configs: Vec<Config>) -> Vec<Checker> {
+fn get_checkers(configs: Vec<Config>, store: Rc<RefCell<Store>>) -> Vec<Checker> {
     let mut checkers = Vec::new();
     for config in configs {
-        checkers.push(Checker::new(config.clone()));
+        checkers.push(Checker::new(config.clone(), store.clone()));
     }
 
     checkers
