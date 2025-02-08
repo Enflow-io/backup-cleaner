@@ -2,8 +2,6 @@ use std::time::SystemTime;
 
 use chrono::{DateTime, Utc};
 
-
-
 #[derive(Debug, Clone)]
 pub(crate) struct FileData {
     pub file_name: String,
