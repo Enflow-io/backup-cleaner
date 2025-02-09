@@ -132,6 +132,8 @@ fn get_files_list() -> std::io::Result<Vec<FileData>> {
 }
 
 fn extract_date_from_file_name(file_name: &str) -> DateTime<Utc> {
+    let date_format = "%d.%m.%Y";
+    let regexp = regex::Regex::new(r"(.*)_\d\.tar").unwrap();
     let regexp = regex::Regex::new(r"(\d{2}).(\d{2}).(\d{4})").unwrap();
     let captures = regexp.captures(file_name).unwrap();
 
