@@ -6,29 +6,31 @@ mod tests {
     use crate::file_generator::generate_weekly_files;
 
     #[test]
-    fn test_daily_files() {
+    fn test_daily_files() -> std::io::Result<()> {
         let configs: Vec<Config> = vec![
             Config {
                 period: "1d",
                 qnt: 4,
             }
         ];
+        let folder = "test-data";
         let mut store = Store::new();
         let _ = cleanup_files();
         let _ = generate_daily_files(10);
 
-        let files_list = get_files_list().unwrap();
+        let files_list = get_files_list(&folder)?;
         let checkers = get_checkers(configs);
         let _ = check_files(&files_list, &checkers, &mut store);
 
         let _ = remove_files(&store.files_to_delete);
-        let file_in_folder = std::fs::read_dir("test-data").unwrap().count();
+        let file_in_folder = std::fs::read_dir("test-data")?.count();
 
         assert_eq!(file_in_folder, 4);
+        Ok(())
     }
 
     #[test]
-    fn test_weekly_files() {
+    fn test_weekly_files() -> std::io::Result<()> {
         let configs: Vec<Config> = vec![
             Config {
                 period: "1w",
@@ -40,20 +42,23 @@ mod tests {
 
         let _ = cleanup_files();
         let _ = generate_weekly_files(10);
-        let files_list = get_files_list().unwrap();
+        let folder = "test-data";
+        let files_list = get_files_list(folder)?;
         let checkers = get_checkers(configs);
         let _ = check_files(&files_list, &checkers, &mut store);
 
 
         let _ = remove_files(&store.files_to_delete);
 
-        let file_in_folder = std::fs::read_dir("test-data").unwrap().count();
+        let file_in_folder = std::fs::read_dir("test-data")?.count();
         assert_eq!(file_in_folder, 7);
+
+        Ok(())
 
     }
 
     #[test]
-    fn test_daily_and_weekly_files() {
+    fn test_daily_and_weekly_files() -> std::io::Result<()> {
         let configs: Vec<Config> = vec![
             Config {
                 period: "1d",
@@ -69,12 +74,14 @@ mod tests {
 
         let _ = cleanup_files();
         let _ = generate_daily_files(27);
-        let files_list = get_files_list().unwrap();
+        let folder = "test-data";
+        let files_list = get_files_list(folder)?;
         let checkers = get_checkers(configs);
         let _ = check_files(&files_list, &checkers, &mut store);
         println!("F: {:?}", store.files_to_delete);
         let _ = remove_files(&store.files_to_delete);
-        let file_in_folder = std::fs::read_dir("test-data").unwrap().count();
+        let file_in_folder = std::fs::read_dir(folder)?.count();
         assert_eq!(file_in_folder, 6);
+        Ok(())
     }
 }

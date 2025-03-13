@@ -41,8 +41,7 @@ fn main() -> std::io::Result<()> {
         }
     }).collect();
 
-    println!("configs {:?}!", configs);
-    
+    print_configs(&configs);    
     let mut store = Store::new();
 
     // // Создаем проверяльщиков
