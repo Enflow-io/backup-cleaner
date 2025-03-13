@@ -67,7 +67,7 @@ pub fn check_files(files: &Vec<FileData>, checkers: &Vec<Checker>, store: &mut S
     for file in files {
         let mut is_to_keep = false;
         for checker in checkers {
-            is_to_keep = checker.check_file(&file, &files);
+            is_to_keep = checker.check_file(&file, &files).unwrap();
 
             // если хоть один чекер захочет, чтобы файл жил, останавливаем цикл
             if is_to_keep {
@@ -137,7 +137,7 @@ fn get_files_list(folder: &str) -> std::io::Result<Vec<FileData>> {
     Ok(prepared_files_list)
 }
 
-fn extract_date_from_file_name(file_name: &str) -> anyhow::Result<DateTime<Utc>>  {
+fn extract_date_from_file_name(file_name: &str) -> Result<DateTime<Utc>, Error>  {
     let regexp = regex::Regex::new(r"(\d{2}).(\d{2}).(\d{4})")?;
     let captures = regexp.captures(file_name).ok_or_else(|| anyhow!("Failed to capture"))?;
 
