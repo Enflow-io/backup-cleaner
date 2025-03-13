@@ -1,5 +1,6 @@
 use chrono::{DateTime, TimeZone, Utc};
-use std::fs::{self};
+use std::{any, fs::{self}};
+use anyhow::{anyhow, Error};
 use store::Store;
 mod checker;
 use checker::Checker;
@@ -37,7 +38,7 @@ fn main() -> std::io::Result<()> {
         let parsed = checker.split("-").collect::<Vec<&str>>();
         Config {
             period: parsed[0],
-            qnt: parsed[1].parse::<u64>().unwrap(),
+            qnt: parsed[1].parse::<u64>().unwrap_or(1),
         }
     }).collect();
 
@@ -53,7 +54,7 @@ fn main() -> std::io::Result<()> {
     // // насыщаем store информацией, что удалить, а что оставить
     check_files(&files_list, &checkers, &mut store);
 
-    let _ = remove_files(&store.files_to_delete);
+    let _ = remove_files(&store.files_to_delete, &folder);
 
     Ok(())
 }
@@ -83,17 +84,14 @@ pub fn check_files(files: &Vec<FileData>, checkers: &Vec<Checker>, store: &mut S
     }
 }
 
-fn remove_files(files: &Vec<String>) -> std::io::Result<()> {
-    let path = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-    let test_data_path = format!("{path}/test-data");
-
+fn remove_files(files: &Vec<String>, folder: &str) -> std::io::Result<()> {
     let mut clone = files.clone();
 
     clone.sort();
     println!("Files to delete: {:#?}", clone);
 
     for file in files {
-        fs::remove_file(format!("{test_data_path}/{file}"))?;
+        fs::remove_file(format!("{folder}/{file}"))?;
     }
 
     Ok(())
@@ -117,33 +115,60 @@ fn print_configs(configs: &Vec<Config>) {
 fn get_files_list(folder: &str) -> std::io::Result<Vec<FileData>> {
     let files = fs::read_dir(folder)?;
     let prepared_files_list: Vec<FileData> = files
-        .map(|file| {
-            let file = file.unwrap();
-            let metadata = file.metadata().unwrap();
-            let created = metadata.created().unwrap();
+        .map(|file| -> Result<FileData, Error> {
+            let file = file?;
+            let metadata = file.metadata()?;
+            let created = metadata.created()?;
+
+            let filename = file.file_name(); // todo: почему в одну строчку не выходит?
+            let filename_string = filename.to_str().ok_or_else(|| anyhow!("filename_stringerror"))?;
+            
             let date_from_filename =
-                extract_date_from_file_name(file.file_name().to_str().unwrap());
-            FileData {
-                file_name: file.file_name().to_str().unwrap().to_string(),
+                extract_date_from_file_name(filename_string)?;
+            Ok(FileData {
+                file_name: filename_string.to_string(),
                 created,
                 date_from_filename,
-            }
+            })
         })
+        .filter_map(Result::ok)
         .collect::<Vec<FileData>>();
 
     Ok(prepared_files_list)
 }
 
-fn extract_date_from_file_name(file_name: &str) -> DateTime<Utc> {
-    let regexp = regex::Regex::new(r"(\d{2}).(\d{2}).(\d{4})").unwrap();
-    let captures = regexp.captures(file_name).unwrap();
+fn extract_date_from_file_name(file_name: &str) -> anyhow::Result<DateTime<Utc>>  {
+    let regexp = regex::Regex::new(r"(\d{2}).(\d{2}).(\d{4})")?;
+    let captures = regexp.captures(file_name).ok_or_else(|| anyhow!("Failed to capture"))?;
 
-    let day = captures.get(1).unwrap().as_str().parse::<u32>().unwrap();
-    let month = captures.get(2).unwrap().as_str().parse::<u32>().unwrap();
-    let year = captures.get(3).unwrap().as_str().parse::<i32>().unwrap();
+
+    // let day = captures.get(1).unwrap().as_str().parse::<u32>().unwrap();
+    // let day = captures.get(1).unwrap().as_str().parse::<u32>().unwrap();
+    // let month = captures.get(2).unwrap().as_str().parse::<u32>().unwrap();
+    // let year = captures.get(3).unwrap().as_str().parse::<i32>().unwrap();
+
+
+    let day = captures.get(1)
+        .ok_or_else(|| anyhow!("Failed to capture day"))?
+        .as_str()
+        .parse::<u32>()
+        .map_err(|_| anyhow!("Failed to parse day"))?;
+    let month = captures.get(2)
+        .ok_or_else(|| anyhow!("Failed to capture month"))?
+        .as_str()
+        .parse::<u32>()
+        .map_err(|_| anyhow!("Failed to parse month"))?;
+    let year = captures.get(3)
+        .ok_or_else(|| anyhow!("Failed to capture year"))?
+        .as_str()
+        .parse::<i32>()
+        .map_err(|_| anyhow!("Failed to parse year"))?;
 
     // println!("Filename: {}", file_name);
-    let date = Utc::with_ymd_and_hms(&Utc, year, month, day, 0, 0, 0).unwrap();
+    let date = match Utc::with_ymd_and_hms(&Utc, year, month, day, 0, 0, 0) {
+        chrono::LocalResult::Single(date) => date,
+        _ => return Err(anyhow!("Failed to create date")),
+    };
 
-    date
+    Ok(date)
 }

@@ -29,7 +29,7 @@ impl<'a> Checker<'a> {
         let start_of_day_timestamp = start_of_day.and_utc().timestamp();
 
         // файл таймштамп в секундах
-        let file_date = extract_date_from_file_name(&file.file_name());
+        let file_date = extract_date_from_file_name(&file.file_name()).unwrap();
         let file_date_timestamp = file_date.timestamp();
 
         let period_in_seconds = parse(period).unwrap().as_secs() as i64;
@@ -55,7 +55,7 @@ impl<'a> Checker<'a> {
         let result: Vec<FileData> = files_list
             .iter()
             .filter(|f| {
-                let f_date = extract_date_from_file_name(&f.file_name());
+                let f_date = extract_date_from_file_name(&f.file_name()).unwrap();
                 let f_date_seconds = f_date.timestamp();
                 f_date_seconds >= start && f_date_seconds <= end
             })
@@ -70,7 +70,7 @@ impl<'a> Checker<'a> {
 
         let filename = file.file_name();
 
-        let date_from_filename = extract_date_from_file_name(&file.file_name());
+        let date_from_filename = extract_date_from_file_name(&file.file_name()).unwrap();
         let date_from_filename_in_seconds = date_from_filename.timestamp();
         let max_file_age = self.get_max_file_age(self.config.period, self.config.qnt);
         if date_from_filename_in_seconds < max_file_age {
