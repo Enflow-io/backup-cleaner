@@ -3,11 +3,11 @@ use parse_duration::parse;
 
 use crate::{extract_date_from_file_name, Config, FileData};
 
-pub(crate) struct Checker {
-    pub config: Config,
+pub(crate) struct Checker<'a> {
+    pub config: Config<'a>,
 }
 
-impl Checker {
+impl<'a> Checker<'a> {
     pub fn new(config: Config) -> Checker {
         Checker { config }
     }

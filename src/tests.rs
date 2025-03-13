@@ -16,6 +16,7 @@ mod tests {
         let mut store = Store::new();
         let _ = cleanup_files();
         let _ = generate_daily_files(10);
+
         let files_list = get_files_list().unwrap();
         let checkers = get_checkers(configs);
         let _ = check_files(&files_list, &checkers, &mut store);

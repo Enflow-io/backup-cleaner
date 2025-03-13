@@ -6,48 +6,58 @@ use checker::Checker;
 mod file_data;
 mod store;
 use file_data::FileData;
-mod tests;
 mod file_generator;
+mod tests;
+use clap::Parser;
+
 #[derive(Debug, Clone)]
-struct Config {
-    period: &'static str,
+struct Config<'a> {
+    period: &'a str,
     qnt: u64,
 }
 
-fn main() {
-    let mut store = Store::new();
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// periods configs, example: 1d-3 1w-2 that means 3 files per day and 2 files per week
+    #[arg(short, long, num_args = 1.., value_delimiter = ' ')]
+    periods: Vec<String>,
+
+    /// folder with files
+    #[arg(short, long)]
+    folder: String,
+}   
+fn main() -> std::io::Result<()> {
+    let args = Args::parse();
+
+    let folder = args.folder;
 
     // формируем конфиг
-    // todo: в будущем из .env
-    let configs: Vec<Config> = vec![
-            Config {
-                period: "1w",
-                qnt: 2,
-            },
-            // Config {
-            //     period: "1w",
-            //     qnt: 7,
-            // },
-    ];
+    let configs: Vec<Config> = args.periods.iter().map(|checker| {
+        let parsed = checker.split("-").collect::<Vec<&str>>();
+        Config {
+            period: parsed[0],
+            qnt: parsed[1].parse::<u64>().unwrap(),
+        }
+    }).collect();
 
-    // Создаем проверяльщиков
+    println!("configs {:?}!", configs);
+    
+    let mut store = Store::new();
+
+    // // Создаем проверяльщиков
     let checkers = get_checkers(configs);
 
-    // Получаем вектор файлов, которые будем проверять
-    let files_list = get_files_list().unwrap();
+    // // Получаем вектор файлов, которые будем проверять
+    let files_list = get_files_list(&folder)?;
 
-    // насыщаем store информацией, что удалить, а что оставить
+    // // насыщаем store информацией, что удалить, а что оставить
     check_files(&files_list, &checkers, &mut store);
 
+    let _ = remove_files(&store.files_to_delete);
 
-    println!("Files to keep: {:#?}", store.files_to_keep);
-    println!("Files to delete: {:#?}", store.files_to_delete);
-
-    // todo: производим реальные действия с файлами
+    Ok(())
 }
-
-
-
 
 pub fn check_files(files: &Vec<FileData>, checkers: &Vec<Checker>, store: &mut Store) {
     // проверяем все файлы с помощью каждого чекера
@@ -75,10 +85,9 @@ pub fn check_files(files: &Vec<FileData>, checkers: &Vec<Checker>, store: &mut S
 }
 
 fn remove_files(files: &Vec<String>) -> std::io::Result<()> {
-
     let path = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let test_data_path = format!("{path}/test-data");
-    
+
     let mut clone = files.clone();
 
     clone.sort();
@@ -106,9 +115,8 @@ fn print_configs(configs: &Vec<Config>) {
     }
 }
 
-
-fn get_files_list() -> std::io::Result<Vec<FileData>> {
-    let files = fs::read_dir("test-data")?;
+fn get_files_list(folder: &str) -> std::io::Result<Vec<FileData>> {
+    let files = fs::read_dir(folder)?;
     let prepared_files_list: Vec<FileData> = files
         .map(|file| {
             let file = file.unwrap();
@@ -140,5 +148,3 @@ fn extract_date_from_file_name(file_name: &str) -> DateTime<Utc> {
 
     date
 }
-
-
