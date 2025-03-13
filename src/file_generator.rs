@@ -1,5 +1,5 @@
 use std::{fs::{self, File}, io::Write};
-
+#[allow(dead_code)]
 pub fn generate_daily_files(files_qnt: i64) -> std::io::Result<()> {
     let path = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let test_data_path = format!("{path}/test-data");
@@ -33,6 +33,7 @@ pub fn generate_daily_files(files_qnt: i64) -> std::io::Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 pub fn generate_weekly_files(files_qnt: i64) -> std::io::Result<()> {
     let path = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let test_data_path = format!("{path}/test-data");
@@ -62,6 +63,7 @@ pub fn generate_weekly_files(files_qnt: i64) -> std::io::Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 pub fn cleanup_files() -> std::io::Result<()> {
 
     let path = std::env::var("CARGO_MANIFEST_DIR").unwrap();

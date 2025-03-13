@@ -22,7 +22,7 @@ mod tests {
         let checkers = get_checkers(configs);
         let _ = check_files(&files_list, &checkers, &mut store);
 
-        let _ = remove_files(&store.files_to_delete);
+        let _ = remove_files(&store.files_to_delete, folder);
         let file_in_folder = std::fs::read_dir("test-data")?.count();
 
         assert_eq!(file_in_folder, 4);
@@ -48,7 +48,7 @@ mod tests {
         let _ = check_files(&files_list, &checkers, &mut store);
 
 
-        let _ = remove_files(&store.files_to_delete);
+        let _ = remove_files(&store.files_to_delete, folder);
 
         let file_in_folder = std::fs::read_dir("test-data")?.count();
         assert_eq!(file_in_folder, 7);
@@ -79,7 +79,7 @@ mod tests {
         let checkers = get_checkers(configs);
         let _ = check_files(&files_list, &checkers, &mut store);
         println!("F: {:?}", store.files_to_delete);
-        let _ = remove_files(&store.files_to_delete);
+        let _ = remove_files(&store.files_to_delete, folder);
         let file_in_folder = std::fs::read_dir(folder)?.count();
         assert_eq!(file_in_folder, 6);
         Ok(())

@@ -52,14 +52,14 @@ fn main() -> std::io::Result<()> {
     let files_list = get_files_list(&folder)?;
 
     // // насыщаем store информацией, что удалить, а что оставить
-    check_files(&files_list, &checkers, &mut store);
+    let _ = check_files(&files_list, &checkers, &mut store);
 
     let _ = remove_files(&store.files_to_delete, &folder);
 
     Ok(())
 }
 
-pub fn check_files(files: &Vec<FileData>, checkers: &Vec<Checker>, store: &mut Store) {
+pub fn check_files(files: &Vec<FileData>, checkers: &Vec<Checker>, store: &mut Store) -> Result<(), Error> {
     // проверяем все файлы с помощью каждого чекера
     // если ни один чекер не выбрал файл,
     //      то добавляем его в список файлов на удаление
@@ -67,7 +67,13 @@ pub fn check_files(files: &Vec<FileData>, checkers: &Vec<Checker>, store: &mut S
     for file in files {
         let mut is_to_keep = false;
         for checker in checkers {
-            is_to_keep = checker.check_file(&file, &files).unwrap();
+            is_to_keep = match checker.check_file(&file, &files) {
+                Ok(result) => result,
+                Err(e) => {
+                    println!("Error: {}", e);
+                    false
+                }
+            };
 
             // если хоть один чекер захочет, чтобы файл жил, останавливаем цикл
             if is_to_keep {
@@ -82,6 +88,7 @@ pub fn check_files(files: &Vec<FileData>, checkers: &Vec<Checker>, store: &mut S
             store.add_file_to_delete(file.file_name());
         }
     }
+    Ok(())
 }
 
 fn remove_files(files: &Vec<String>, folder: &str) -> std::io::Result<()> {
@@ -142,12 +149,7 @@ fn extract_date_from_file_name(file_name: &str) -> Result<DateTime<Utc>, Error> 
     let captures = regexp.captures(file_name).ok_or_else(|| anyhow!("Failed to capture"))?;
 
 
-    // let day = captures.get(1).unwrap().as_str().parse::<u32>().unwrap();
-    // let day = captures.get(1).unwrap().as_str().parse::<u32>().unwrap();
-    // let month = captures.get(2).unwrap().as_str().parse::<u32>().unwrap();
-    // let year = captures.get(3).unwrap().as_str().parse::<i32>().unwrap();
-
-
+    
     let day = captures.get(1)
         .ok_or_else(|| anyhow!("Failed to capture day"))?
         .as_str()
