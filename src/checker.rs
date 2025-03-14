@@ -3,6 +3,7 @@ use std::any;
 use chrono::{TimeZone, Utc};
 use parse_duration::parse;
 use anyhow::Error;
+use regex::Regex;
 
 use crate::{extract_date_from_file_name, Config, FileData};
 
@@ -17,7 +18,6 @@ impl<'a> Checker<'a> {
 
     fn get_max_file_age(&self, period: &str, qnt: u64) -> Result<i64, Error> {
         let now = Utc::now();
-        // let start_of_today = now.date().and_hms(0, 0, 0);
         let start_of_today = now.date_naive().and_hms_opt(0, 0, 0);
         let start_of_today_timestamp = start_of_today.ok_or_else(|| anyhow::anyhow!("start_of_today_timestamp err"))?.and_utc().timestamp();
 
@@ -27,7 +27,7 @@ impl<'a> Checker<'a> {
         Ok(start_of_today_timestamp - period_in_seconds)
     }
 
-    fn get_period_bounds(&self, file: &FileData, period: &str) -> anyhow::Result<(i64, i64), Error> {
+    fn get_period_bounds(&self, file: &FileData, period: &str, regex: &Regex) -> anyhow::Result<(i64, i64), Error> {
         // начал сегодняшнего дня
         let now = Utc::now();
         let start_of_day = now.date_naive().and_hms_opt(0, 0, 0).ok_or_else(|| anyhow::anyhow!("start_of_day err"))?;
@@ -35,7 +35,7 @@ impl<'a> Checker<'a> {
 
         // файл таймштамп в секундах
         let filename = &file.file_name();
-        let file_date = extract_date_from_file_name(filename)?;
+        let file_date = extract_date_from_file_name(filename, &regex)?;
         let file_date_timestamp = file_date.timestamp();
 
         let parsed = parse(period)?;
@@ -55,11 +55,12 @@ impl<'a> Checker<'a> {
         start: i64,
         end: i64,
         files_list: &Vec<FileData>,
+        regexp: &Regex
     ) -> Vec<FileData> {
         let result: Vec<FileData> = files_list
             .iter()
             .filter(|f| {
-                match extract_date_from_file_name(&f.file_name()) {
+                match extract_date_from_file_name(&f.file_name(), &regexp) {
                     Ok(f_date) => {
                         let f_date_seconds = f_date.timestamp();
                         f_date_seconds >= start && f_date_seconds <= end
@@ -73,12 +74,12 @@ impl<'a> Checker<'a> {
         result
     }
 
-    pub fn check_file(&self, file: &FileData, files_list: &Vec<FileData>) -> Result<bool, Error> {
+    pub fn check_file(&self, file: &FileData, files_list: &Vec<FileData>, regexp: &Regex) -> Result<bool, Error> {
         let mut is_to_keep = false;
 
         let filename = file.file_name();
 
-        let date_from_filename = extract_date_from_file_name(&file.file_name())?;
+        let date_from_filename = extract_date_from_file_name(&file.file_name(), &regexp)?;
         let date_from_filename_in_seconds = date_from_filename.timestamp();
         let max_file_age = self.get_max_file_age(self.config.period, self.config.qnt)?;
         if date_from_filename_in_seconds < max_file_age {
@@ -87,13 +88,13 @@ impl<'a> Checker<'a> {
 
 
         // 1. находим рамки периода для файла - start и end
-        let (start, end) = match self.get_period_bounds(&file, &self.config.period) {
+        let (start, end) = match self.get_period_bounds(&file, &self.config.period, &regexp) {
             Ok(bounds) => bounds,
             Err(_) => return Err(anyhow::anyhow!("Can't get period bounds")),
         };
 
         // 2. находим все файлы, которые попадают в этот период
-        let mut files_in_period = self.find_files_in_period(start, end, files_list);
+        let mut files_in_period = self.find_files_in_period(start, end, files_list, &regexp);
         files_in_period.sort_by(|a, b| b.created.cmp(&a.created));
 
         

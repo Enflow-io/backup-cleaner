@@ -18,9 +18,10 @@ mod tests {
         let _ = cleanup_files();
         let _ = generate_daily_files(10);
 
-        let files_list = get_files_list(&folder)?;
+        let regexp = regex::Regex::new(r"(\d{2}).(\d{2}).(\d{4})").unwrap_or_else(|_| panic!("Can't compile regex"));
+        let files_list = get_files_list(&folder, &regexp)?;
         let checkers = get_checkers(configs);
-        let _ = check_files(&files_list, &checkers, &mut store);
+        let _ = check_files(&files_list, &checkers, &mut store, &regexp);
 
         let _ = remove_files(&store.files_to_delete, folder);
         let file_in_folder = std::fs::read_dir("test-data")?.count();
@@ -43,9 +44,10 @@ mod tests {
         let _ = cleanup_files();
         let _ = generate_weekly_files(10);
         let folder = "test-data";
-        let files_list = get_files_list(folder)?;
+        let regexp = regex::Regex::new(r"(\d{2}).(\d{2}).(\d{4})").unwrap_or_else(|_| panic!("Can't compile regex"));
+        let files_list = get_files_list(&folder, &regexp)?;
         let checkers = get_checkers(configs);
-        let _ = check_files(&files_list, &checkers, &mut store);
+        let _ = check_files(&files_list, &checkers, &mut store, &regexp);
 
 
         let _ = remove_files(&store.files_to_delete, folder);
@@ -75,9 +77,10 @@ mod tests {
         let _ = cleanup_files();
         let _ = generate_daily_files(27);
         let folder = "test-data";
-        let files_list = get_files_list(folder)?;
+        let regexp = regex::Regex::new(r"(\d{2}).(\d{2}).(\d{4})").unwrap_or_else(|_| panic!("Can't compile regex"));
+        let files_list = get_files_list(folder, &regexp)?;
         let checkers = get_checkers(configs);
-        let _ = check_files(&files_list, &checkers, &mut store);
+        let _ = check_files(&files_list, &checkers, &mut store, &regexp);
         println!("F: {:?}", store.files_to_delete);
         let _ = remove_files(&store.files_to_delete, folder);
         let file_in_folder = std::fs::read_dir(folder)?.count();

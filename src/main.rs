@@ -1,4 +1,5 @@
 use chrono::{DateTime, TimeZone, Utc};
+use regex::Regex;
 use std::{any, fs::{self}};
 use anyhow::{anyhow, Error};
 use store::Store;
@@ -27,10 +28,15 @@ struct Args {
     /// folder with files
     #[arg(short, long)]
     folder: String,
-}   
-fn main() -> std::io::Result<()> {
+
+    /// regexp for searching date in filename
+    #[arg(short, long, default_value = r"(\d{2}).(\d{2}).(\d{4})")]
+   regexp_date: String,
+}
+fn main() -> Result<(), Error> {
     let args = Args::parse();
 
+    let regexp = regex::Regex::new(&args.regexp_date).unwrap_or_else(|_| panic!("Failed to create regexp"));
     let folder = args.folder;
 
     // формируем конфиг
@@ -49,17 +55,17 @@ fn main() -> std::io::Result<()> {
     let checkers = get_checkers(configs);
 
     // // Получаем вектор файлов, которые будем проверять
-    let files_list = get_files_list(&folder)?;
+    let files_list = get_files_list(&folder, &regexp)?;
 
     // // насыщаем store информацией, что удалить, а что оставить
-    let _ = check_files(&files_list, &checkers, &mut store);
+    let _ = check_files(&files_list, &checkers, &mut store, &regexp)?;
 
     let _ = remove_files(&store.files_to_delete, &folder);
 
     Ok(())
 }
 
-pub fn check_files(files: &Vec<FileData>, checkers: &Vec<Checker>, store: &mut Store) -> Result<(), Error> {
+pub fn check_files(files: &Vec<FileData>, checkers: &Vec<Checker>, store: &mut Store, regex: &Regex) -> Result<(), Error> {
     // проверяем все файлы с помощью каждого чекера
     // если ни один чекер не выбрал файл,
     //      то добавляем его в список файлов на удаление
@@ -67,7 +73,7 @@ pub fn check_files(files: &Vec<FileData>, checkers: &Vec<Checker>, store: &mut S
     for file in files {
         let mut is_to_keep = false;
         for checker in checkers {
-            is_to_keep = match checker.check_file(&file, &files) {
+            is_to_keep = match checker.check_file(&file, &files, &regex) {
                 Ok(result) => result,
                 Err(e) => {
                     println!("Error: {}", e);
@@ -119,7 +125,7 @@ fn print_configs(configs: &Vec<Config>) {
     }
 }
 
-fn get_files_list(folder: &str) -> std::io::Result<Vec<FileData>> {
+fn get_files_list(folder: &str, regex: &Regex) -> std::io::Result<Vec<FileData>> {
     let files = fs::read_dir(folder)?;
     let prepared_files_list: Vec<FileData> = files
         .map(|file| -> Result<FileData, Error> {
@@ -131,7 +137,7 @@ fn get_files_list(folder: &str) -> std::io::Result<Vec<FileData>> {
             let filename_string = filename.to_str().ok_or_else(|| anyhow!("filename_stringerror"))?;
             
             let date_from_filename =
-                extract_date_from_file_name(filename_string)?;
+                extract_date_from_file_name(filename_string, regex)?;
             Ok(FileData {
                 file_name: filename_string.to_string(),
                 created,
@@ -144,11 +150,9 @@ fn get_files_list(folder: &str) -> std::io::Result<Vec<FileData>> {
     Ok(prepared_files_list)
 }
 
-fn extract_date_from_file_name(file_name: &str) -> Result<DateTime<Utc>, Error>  {
-    let regexp = regex::Regex::new(r"(\d{2}).(\d{2}).(\d{4})")?;
-    let captures = regexp.captures(file_name).ok_or_else(|| anyhow!("Failed to capture"))?;
-
-
+fn extract_date_from_file_name(file_name: &str, regex: &Regex) -> Result<DateTime<Utc>, Error>  {
+    // let regexp = regex::Regex::new(r"(\d{2}).(\d{2}).(\d{4})")?;
+    let captures = regex.captures(file_name).ok_or_else(|| anyhow!("Failed to capture"))?;
     
     let day = captures.get(1)
         .ok_or_else(|| anyhow!("Failed to capture day"))?
