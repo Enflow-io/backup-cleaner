@@ -18,20 +18,21 @@ impl<'a> Checker<'a> {
 
     fn get_max_file_age(&self, period: &str, qnt: u64) -> Result<i64, Error> {
         let now = Utc::now();
-        let start_of_today = now.date_naive().and_hms_opt(0, 0, 0);
-        let start_of_today_timestamp = start_of_today.ok_or_else(|| anyhow::anyhow!("start_of_today_timestamp err"))?.and_utc().timestamp();
+        let end_of_the_day = now.date_naive().and_hms_opt(23, 59, 59);
+        let end_of_the_day_timestamp = end_of_the_day.ok_or_else(|| anyhow::anyhow!("start_of_today_timestamp err"))?.and_utc().timestamp();
 
 
         let parsed = parse(period)?;
         let period_in_seconds = (parsed.as_secs() as i64) * (qnt as i64);
-        Ok(start_of_today_timestamp - period_in_seconds)
+        Ok(end_of_the_day_timestamp - period_in_seconds)
     }
 
     fn get_period_bounds(&self, file: &FileData, period: &str, regex: &Regex) -> anyhow::Result<(i64, i64), Error> {
-        // начал сегодняшнего дня
+        // начало сегодняшнего дня
+        // конец сегодняшнего дня
         let now = Utc::now();
-        let start_of_day = now.date_naive().and_hms_opt(0, 0, 0).ok_or_else(|| anyhow::anyhow!("start_of_day err"))?;
-        let start_of_day_timestamp = start_of_day.and_utc().timestamp();
+        let end_of_the_day = now.date_naive().and_hms_opt(23, 59, 59).ok_or_else(|| anyhow::anyhow!("enf_of_the_day err"))?;
+        let end_of_the_day_timestamp = end_of_the_day.and_utc().timestamp();
 
         // файл таймштамп в секундах
         let filename = &file.file_name();
@@ -41,11 +42,11 @@ impl<'a> Checker<'a> {
         let parsed = parse(period)?;
         let period_in_seconds = parsed.as_secs() as i64;
 
-        let period_from_today_to_file_date = start_of_day_timestamp - file_date_timestamp;
+        let period_from_today_to_file_date = end_of_the_day_timestamp - file_date_timestamp;
         let periods_qnt_passed: i64 = period_from_today_to_file_date / period_in_seconds;
 
-        let start = (start_of_day_timestamp - ((periods_qnt_passed + 1) * period_in_seconds)) + 1;
-        let end = start_of_day_timestamp - (periods_qnt_passed * period_in_seconds);
+        let start = (end_of_the_day_timestamp - ((periods_qnt_passed + 1) * period_in_seconds)) + 1;
+        let end = end_of_the_day_timestamp - (periods_qnt_passed * period_in_seconds);
 
         Ok((start, end))
     }
@@ -108,14 +109,14 @@ impl<'a> Checker<'a> {
             _ => return Err(anyhow::anyhow!("Can't parse date from timestamp")),
         };
 
-        println!("Period, from: {}, to: {}", from_date, end_date);
-        println!(
-            "Files in period: {:#?}",
-            files_in_period
-                .iter()
-                .map(|f| f.file_name())
-                .collect::<Vec<_>>()
-        );
+        // println!("Period, from: {}, to: {}", from_date, end_date);
+        // println!(
+        //     "Files in period: {:#?}",
+        //     files_in_period
+        //         .iter()
+        //         .map(|f| f.file_name())
+        //         .collect::<Vec<_>>()
+        // );
 
         // 3. выбираем самый молодой и старый файлы
         let most_old_file = files_in_period.first().ok_or_else(|| anyhow::anyhow!("No files in period"))?;

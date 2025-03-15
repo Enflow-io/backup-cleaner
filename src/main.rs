@@ -101,7 +101,7 @@ fn remove_files(files: &Vec<String>, folder: &str) -> std::io::Result<()> {
     let mut clone = files.clone();
 
     clone.sort();
-    println!("Files to delete: {:#?}", clone);
+    // println!("Files to delete: {:#?}", clone);
 
     for file in files {
         fs::remove_file(format!("{folder}/{file}"))?;

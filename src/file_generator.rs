@@ -10,18 +10,15 @@ pub fn generate_daily_files(files_qnt: i64, mayby_path: Option<&str>) -> std::io
     
     fs::create_dir_all(&path)?;
 
-    println!("files_qnt files in {}", files_qnt);
     for i in 0..files_qnt {
-        println!("Creating file: {}", i);
         let double_create = i % 2 == 0;
-        let today = chrono::Local::now() - chrono::Duration::days(i+1);
+        let today = chrono::Local::now() - chrono::Duration::days(i);
 
         let day_str = today.format("%d").to_string();
         let month_str = today.format("%m").to_string();
         let year = today.format("%Y").to_string();
 
         let file_name = format!("{path}/{day_str}.{month_str}.{year}_{i}.tar");
-        println!("Creating file: {}", file_name);
         let cloned_file_name = file_name.clone();
         let mut file = File::create(cloned_file_name)?;
         file.write_all(file_name.as_bytes())?;

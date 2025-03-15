@@ -39,25 +39,26 @@ mod tests {
         let configs: Vec<Config> = vec![
             Config {
                 period: "1w",
-                qnt: 7,
+                qnt: 1,
             }
         ];
 
         let mut store = Store::new();
 
         let _ = cleanup_files();
-        let _ = generate_weekly_files(10);
+        // let _ = generate_weekly_files(10);
         let folder = "test-data";
+
+        let _ = generate_daily_files(27, None);
         let regexp = regex::Regex::new(r"(\d{2}).(\d{2}).(\d{4})").unwrap_or_else(|_| panic!("Can't compile regex"));
         let files_list = get_files_list(&folder, &regexp)?;
         let checkers = get_checkers(configs);
         let _ = check_files(&files_list, &checkers, &mut store, &regexp);
 
-
         let _ = remove_files(&store.files_to_delete, folder);
 
         let file_in_folder = std::fs::read_dir("test-data")?.count();
-        assert_eq!(file_in_folder, 7);
+        assert_eq!(file_in_folder, 1);
 
         Ok(())
 
@@ -85,10 +86,9 @@ mod tests {
         let files_list = get_files_list(folder, &regexp)?;
         let checkers = get_checkers(configs);
         let _ = check_files(&files_list, &checkers, &mut store, &regexp);
-        println!("F: {:?}", store.files_to_delete);
         let _ = remove_files(&store.files_to_delete, folder);
         let file_in_folder = std::fs::read_dir(folder)?.count();
-        assert_eq!(file_in_folder, 6);
+        assert_eq!(file_in_folder, 5);
         Ok(())
     }
 
