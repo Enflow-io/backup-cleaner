@@ -87,8 +87,9 @@ mod tests {
         let checkers = get_checkers(configs);
         let _ = check_files(&files_list, &checkers, &mut store, &regexp);
         let _ = remove_files(&store.files_to_delete, folder);
-        let file_in_folder = std::fs::read_dir(folder)?.count();
-        assert_eq!(file_in_folder, 5);
+        let file_in_folder = std::fs::read_dir(folder)?;
+        print!("{:?}", file_in_folder);
+        assert_eq!(file_in_folder.count(), 5);
         Ok(())
     }
 
