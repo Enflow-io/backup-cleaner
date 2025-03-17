@@ -24,11 +24,10 @@ impl<'a> Checker<'a> {
 
         let parsed = parse(period)?;
         let period_in_seconds = (parsed.as_secs() as i64) * (qnt as i64);
-        Ok(end_of_the_day_timestamp - period_in_seconds)
+        Ok(end_of_the_day_timestamp - period_in_seconds + 1)
     }
 
     fn get_period_bounds(&self, file: &FileData, period: &str, regex: &Regex) -> anyhow::Result<(i64, i64), Error> {
-        // начало сегодняшнего дня
         // конец сегодняшнего дня
         let now = Utc::now();
         let end_of_the_day = now.date_naive().and_hms_opt(23, 59, 59).ok_or_else(|| anyhow::anyhow!("enf_of_the_day err"))?;
