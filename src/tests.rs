@@ -71,15 +71,19 @@ mod tests {
 
         let _ = cleanup_files();
         let _ = generate_daily_files(27, None);
-        let folder = "test-data";
+
+        let root_path = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| panic!("Can't get root path"));
+        let folder = format!("{}/test-data/", root_path);
         let regexp = regex::Regex::new(r"(\d{2}).(\d{2}).(\d{4})").unwrap_or_else(|_| panic!("Can't compile regex"));
-        let files_list = get_files_list(folder, &regexp)?;
+        let files_list = get_files_list(&folder, &regexp)?;
         let checkers = get_checkers(configs);
         let _ = check_files(&files_list, &checkers, &mut store, &regexp);
-        let _ = remove_files(&store.files_to_delete, folder);
+        let _ = remove_files(&store.files_to_delete, &folder);
         let file_in_folder = std::fs::read_dir(folder)?;
-        print!("{:?}", file_in_folder);
-        assert_eq!(file_in_folder.count(), 5);
+        let files_list: Vec<_> = file_in_folder.collect::<Result<Vec<_>, _>>()?;
+        println!("{:#?}", files_list);
+
+        assert_eq!(files_list.len(), 5);
         Ok(())
     }
 
