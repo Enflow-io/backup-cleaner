@@ -16,3 +16,10 @@ bclean -p 1d-7 -f ./backups (1 config for the folder)
 bclean -p 1d-7 -p 1w-3 -f ./backups -r "(\d{2}).(\d{2}).(\d{4})" (2 configs, folder and regexp to extract date from file)
 ```
 
+## Install
+Download <a href="https://github.com/Enflow-io/backup-cleaner/releases/tag/0.0.1">last release</a>
+
+Make it executable:
+```
+chmod +x bcleaner
+```
