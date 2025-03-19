@@ -12,8 +12,8 @@ System administrators often create backups on a daily basis and then struggle to
 ## Usage
 
 ```
-bclean -p 1d-7 -f ./backups (1 config for the folder)
-bclean -p 1d-7 -p 1w-3 -f ./backups -r "(\d{2}).(\d{2}).(\d{4})" (2 configs, folder and regexp to extract date from file)
+bcleaner -p 1d-7 -f ./backups (1 config for the folder)
+bcleaner -p 1d-7 -p 1w-3 -f ./backups -r "(\d{2}).(\d{2}).(\d{4})" (2 configs, folder and regexp to extract date from file)
 ```
 
 ## Install
