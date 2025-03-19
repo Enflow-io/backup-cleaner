@@ -5,18 +5,14 @@
   Configurable command-line tool for easily deleting unnecessary backup files.
 </p>
 
-## Backup cleaner
-
-This app removes redundant backup copies and frees up space on your disk.
 
 
-cargo run -- -p 1d-5 -f /Users/constantine/Projects/Rust/Backups -r "(\d{2}).(\d{2}).(\d{4})"
+System administrators often create backups on a daily basis and then struggle to delete unnecessary archive files. B-Cleaner solves this issue.
 
-### How it works
+## Usage
 
-1. Create .env file to config
-2. Cron it up
+```
+bclean -p 1d-7 -f ./backups (1 config for the folder)
+bclean -p 1d-7 -p 1w-3 -f ./backups -r "(\d{2}).(\d{2}).(\d{4})" (2 configs, folder and regexp to extract date from file)
+```
 
-
-### Config
-period + qnt
