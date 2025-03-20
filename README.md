@@ -7,7 +7,7 @@
 
 
 ### Overview
-System administrators frequently create daily backups but often struggle to remove outdated archive files. B-Cleaner automates this process, making backup management effortless.
+System administrators frequently create daily backups but often struggle to remove outdated archive files. B-Cleaner automates this process, making backup management effortless. Simply append this command to the end of your backup script.
 
 ## Configuration Format
 Configurations follow this format:
