@@ -110,13 +110,12 @@ pub fn check_files(files: &[FileData], checkers: &[Checker], store: &mut Store, 
     Ok(())
 }
 
-fn remove_files(files: &Vec<String>, folder: &str) -> std::io::Result<()> {
-    let mut clone = files.clone();
+fn remove_files(files: &[String], folder: &str) -> std::io::Result<()> {
+    let mut clone: Vec<String> = files.to_vec();
 
     clone.sort();
-    // println!("Files to delete: {:#?}", clone);
 
-    for file in files {
+    for file in clone {
         fs::remove_file(format!("{folder}/{file}"))?;
     }
 
