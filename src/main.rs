@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use chrono::{DateTime, TimeZone, Utc};
 use regex::Regex;
 use std::{any, fs::{self}};
