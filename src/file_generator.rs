@@ -1,6 +1,7 @@
+use std::io::Result as IoResult;
 use std::{fs::{self, File}, io::Write};
 #[allow(dead_code)]
-pub fn generate_daily_files(files_qnt: i64, mayby_path: Option<&str>) -> std::io::Result<()> {
+pub fn generate_daily_files(files_qnt: i64, mayby_path: Option<&str>) -> IoResult<()> {
     let root_path = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| panic!("Can't get root path"));
     let path = match mayby_path {
         Some(path) => path.to_string(),
@@ -34,7 +35,7 @@ pub fn generate_daily_files(files_qnt: i64, mayby_path: Option<&str>) -> std::io
 }
 
 #[allow(dead_code)]
-pub fn generate_weekly_files(files_qnt: i64) -> std::io::Result<()> {
+pub fn generate_weekly_files(files_qnt: i64) -> IoResult<()> {
     let path = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let test_data_path = format!("{path}/test-data");
     fs::create_dir_all(test_data_path)?;
@@ -64,7 +65,7 @@ pub fn generate_weekly_files(files_qnt: i64) -> std::io::Result<()> {
 }
 
 #[allow(dead_code)]
-pub fn cleanup_files() -> std::io::Result<()> {
+pub fn cleanup_files() -> IoResult<()> {
 
     let path = std::env::var("CARGO_MANIFEST_DIR").unwrap();
 

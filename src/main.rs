@@ -12,6 +12,7 @@ use file_data::FileData;
 mod file_generator;
 mod tests;
 use clap::Parser;
+use std::io::Result as IoResult;
 
 #[derive(Debug, Clone)]
 struct Config<'a> {
@@ -111,7 +112,7 @@ pub fn check_files(files: &[FileData], checkers: &[Checker], store: &mut Store, 
     Ok(())
 }
 
-fn remove_files(files: &[String], folder: &str) -> std::io::Result<()> {
+fn remove_files(files: &[String], folder: &str) -> IoResult<()> {
     let mut clone: Vec<String> = files.to_vec();
 
     clone.sort();
@@ -138,7 +139,7 @@ fn print_configs(configs: &Vec<Config>) {
     }
 }
 
-fn get_files_list(folder: &str, regex: &Regex) -> std::io::Result<Vec<FileData>> {
+fn get_files_list(folder: &str, regex: &Regex) -> IoResult<Vec<FileData>> {
     let files = fs::read_dir(folder)?;
     let prepared_files_list: Vec<FileData> = files
         .map(|file| -> Result<FileData, Error> {

@@ -1,14 +1,14 @@
-
 #[cfg(test)]
 mod tests {
     use core::panic;
+    use std::io::Result as IoResult;
 
     use crate::{file_generator::{cleanup_files, generate_daily_files}, get_checkers, get_files_list, remove_files, store::Store, Config};
     use crate::{check_files};
     use crate::file_generator::generate_weekly_files;
 
     #[test]
-    fn test_daily_files() -> std::io::Result<()> {
+    fn test_daily_files() -> IoResult<()> {
         let configs: Vec<Config> = vec![
             Config {
                 period: "1d",
@@ -25,7 +25,7 @@ mod tests {
     }
 
     #[test]
-    fn test_weekly_files() -> std::io::Result<()> {
+    fn test_weekly_files() -> IoResult<()> {
         let configs: Vec<Config> = vec![
             Config {
                 period: "1w",
@@ -55,7 +55,7 @@ mod tests {
     }
 
     #[test]
-    fn test_daily_and_weekly_files() -> std::io::Result<()> {
+    fn test_daily_and_weekly_files() -> IoResult<()> {
         let configs: Vec<Config> = vec![
             Config {
                 period: "1d",
@@ -89,7 +89,7 @@ mod tests {
 
 
     #[test]
-    fn generate_backups () -> std::io::Result<()> {
+    fn generate_backups () -> IoResult<()> {
         let path = "/Users/constantine/Projects/Rust/Backups";
         let _ = generate_daily_files(50, Some(&path));
         println!("Files generated");
