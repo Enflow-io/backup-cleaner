@@ -102,10 +102,9 @@ pub fn check_files(files: &[FileData], checkers: &[Checker], store: &mut Store, 
         }
 
         // когда все чекеры делали свою работу, добавляем файл в нужный список
-        if is_to_keep {
-            store.add_file_to_keep(file.file_name());
-        } else {
-            store.add_file_to_delete(file.file_name());
+        match is_to_keep {
+            true => store.add_file_to_keep(file.file_name()),
+            false => store.add_file_to_delete(file.file_name()),
         }
     }
     Ok(())
