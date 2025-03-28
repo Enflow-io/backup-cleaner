@@ -125,7 +125,7 @@ fn remove_files(files: &[String], folder: &str) -> std::io::Result<()> {
 fn get_checkers(configs: Vec<Config>) -> Vec<Checker> {
     let mut checkers = Vec::new();
     for config in configs {
-        checkers.push(Checker::new(config.clone()));
+        checkers.push(Checker::new(config));
     }
 
     checkers
