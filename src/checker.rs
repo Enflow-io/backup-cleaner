@@ -2,7 +2,7 @@ use std::any;
 
 use chrono::{TimeZone, Utc};
 use parse_duration::parse;
-use anyhow::Error;
+use anyhow::{bail, Error};
 use regex::Regex;
 
 use crate::{extract_date_from_file_name, Config, FileData};
@@ -98,24 +98,18 @@ impl<'a> Checker<'a> {
         files_in_period.sort_by(|a, b| b.created.cmp(&a.created));
 
         
-        let from_date = match Utc.timestamp_opt(start as i64, 0) {
+        let from_date = match Utc.timestamp_opt(start as _, 0) {
             chrono::LocalResult::Single(date) => date,
-            _ => return Err(anyhow::anyhow!("Can't parse date from timestamp")),
+            // _ => return Err(anyhow::anyhow!("Can't parse date from timestamp")),
+            _ => bail!("Can't parse date from timestamp"),
         };
 
-        let end_date = match Utc.timestamp_opt(end as i64, 0) {
+        let end_date = match Utc.timestamp_opt(end as _, 0) {
             chrono::LocalResult::Single(date) => date,
-            _ => return Err(anyhow::anyhow!("Can't parse date from timestamp")),
+            // _ => return Err(anyhow::anyhow!("Can't parse date from timestamp")),
+            _ => bail!("Can't parse date from timestamp")
         };
 
-        // println!("Period, from: {}, to: {}", from_date, end_date);
-        // println!(
-        //     "Files in period: {:#?}",
-        //     files_in_period
-        //         .iter()
-        //         .map(|f| f.file_name())
-        //         .collect::<Vec<_>>()
-        // );
 
         // 3. выбираем самый молодой и старый файлы
         let most_old_file = files_in_period.first().ok_or_else(|| anyhow::anyhow!("No files in period"))?;
