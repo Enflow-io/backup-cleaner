@@ -36,7 +36,21 @@ struct Args {
 fn main() -> Result<(), Error> {
     let args = Args::parse();
 
-    let regexp = regex::Regex::new(&args.regexp_date).unwrap_or_else(|_| panic!("Failed to create regexp"));
+
+    // let regexp = regex::Regex::new(&args.regexp_date).unwrap_or_else(|_| panic!("Failed to create regexp"));
+    let regexp =  match regex::Regex::new(&args.regexp_date) {
+        Ok(regexp) => regexp,
+        Err(e) => {
+            println!("Failed to create regexp: {}", e);
+            return Err(anyhow!("Failed to create regexp"));
+        }
+    };
+
+    // let regexp = regex::Regex::new(&args.regexp_date).map_err(|e| anyhow!("Failed to create regexp: {}", e))?;
+
+
+
+    
     let folder = args.folder;
 
     // формируем конфиг
@@ -65,7 +79,7 @@ fn main() -> Result<(), Error> {
     Ok(())
 }
 
-pub fn check_files(files: &Vec<FileData>, checkers: &Vec<Checker>, store: &mut Store, regex: &Regex) -> Result<(), Error> {
+pub fn check_files(files: &[FileData], checkers: &[Checker], store: &mut Store, regex: &Regex) -> Result<(), Error> {
     // проверяем все файлы с помощью каждого чекера
     // если ни один чекер не выбрал файл,
     //      то добавляем его в список файлов на удаление

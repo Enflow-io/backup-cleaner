@@ -54,7 +54,7 @@ impl<'a> Checker<'a> {
         &self,
         start: i64,
         end: i64,
-        files_list: &Vec<FileData>,
+        files_list: &[FileData],
         regexp: &Regex
     ) -> Vec<FileData> {
         let result: Vec<FileData> = files_list
@@ -74,7 +74,7 @@ impl<'a> Checker<'a> {
         result
     }
 
-    pub fn check_file(&self, file: &FileData, files_list: &Vec<FileData>, regexp: &Regex) -> Result<bool, Error> {
+    pub fn check_file(&self, file: &FileData, files_list: &[FileData], regexp: &Regex) -> Result<bool, Error> {
         let mut is_to_keep = false;
 
         let filename = file.file_name();
